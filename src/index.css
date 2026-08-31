@@ -1,0 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   eGovPH HCI Prototype — Design Token CSS Custom Properties
+   Section 4 of the specification — applied globally
+   ============================================================ */
+:root {
+  /* Primary — flag blue (Pantone 286C) */
+  --color-primary: #0038A8;
+  --color-primary-dark: #002D82;
+  --color-primary-light: #EAF0FB;
+
+  /* Secondary — flag red (Pantone 186C) */
+  --color-secondary: #CE1126;
+  --color-secondary-dark: #A50D1E;
+
+  /* Accent — flag sun/stars gold (Pantone 116C) */
+  --color-accent: #FCD116;
+
+  /* Neutrals */
+  --color-bg: #F4F6FA;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #17203A;
+  --color-text-secondary: #5B6478;
+  --color-border: #E4E8F0;
+
+  /* Semantic */
+  --color-success: #16A34A;
+  --color-warning: #F59E0B;
+  --color-error: #DC2626;
+  --color-verified-badge: #0038A8;
+
+  /* Shape */
+  --radius-card: 16px;
+  --radius-button: 12px;
+  --radius-input: 12px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-card: 0 1px 3px rgba(23, 32, 58, 0.08);
+  --shadow-card-hover: 0 4px 12px rgba(23, 32, 58, 0.12);
+  --shadow-modal: 0 20px 60px rgba(23, 32, 58, 0.20);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-out;
+  --transition-base: 200ms ease-out;
+}
+
+/* ============================================================
+   Base Reset + Typography
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ============================================================
+   Phone Frame (desktop centering shell)
+   ============================================================ */
+#root {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100dvh;
+  background-color: #1a1a2e;
+}
+
+.phone-frame {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  background-color: var(--color-bg);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  #root {
+    padding: 24px 0;
+    align-items: flex-start;
+  }
+  .phone-frame {
+    max-width: 390px;
+    min-height: calc(100dvh - 48px);
+    max-height: 844px;
+    border-radius: 40px;
+    box-shadow: 0 0 0 10px #2a2a3e, 0 30px 80px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+}
+
+/* ============================================================
+   Utility Classes — Shimmer Skeleton
+   ============================================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #E4E8F0 0%,
+    #F0F3F8 50%,
+    #E4E8F0 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ============================================================
+   Utility Classes — Focus states (WCAG AA)
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Utility Classes — Scrolling
+   ============================================================ */
+.scroll-smooth {
+  scroll-behavior: smooth;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   Custom Input Styles (beyond Tailwind)
+   ============================================================ */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+}
+
+/* Remove number input arrows */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ============================================================
+   Bagong Pilipinas accent stripe
+   ============================================================ */
+.bp-stripe {
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+}
+
+/* ============================================================
+   Confetti animation (one-time, verification success)
+   ============================================================ */
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-piece {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  animation: confetti-fall linear forwards;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* ============================================================
+   Screen transition
+   ============================================================ */
+.screen-enter {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.screen-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 200ms ease-out, transform 200ms ease-out;
+}
+
+/* ============================================================
+   Bottom nav safe area
+   ============================================================ */
+.bottom-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ============================================================
+   Badge / Pill
+   ============================================================ */
+.badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.badge-new {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--color-secondary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

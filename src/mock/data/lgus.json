@@ -1,0 +1,138 @@
+[
+  {
+    "code": "QC",
+    "name": "Quezon City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Joy Belmonte",
+    "website": "quezoncity.gov.ph",
+    "services": [
+      "Business Permit Application",
+      "Real Property Tax Payment",
+      "Birth Certificate Request",
+      "Barangay Clearance",
+      "Building Permit",
+      "Senior Citizen ID",
+      "PWD ID Application",
+      "Garbage Collection Schedule",
+      "QCDRRMO Hotline"
+    ]
+  },
+  {
+    "code": "MNL",
+    "name": "City of Manila",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Honey Lacuna",
+    "website": "manila.gov.ph",
+    "services": [
+      "Business Permit Application",
+      "Real Property Tax Payment",
+      "Civil Registry Services",
+      "Barangay Clearance",
+      "Manila Water Connection",
+      "Ospital ng Maynila Services",
+      "Manila Zoo Entry Pass"
+    ]
+  },
+  {
+    "code": "MKT",
+    "name": "Makati City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Abby Binay",
+    "website": "makati.gov.ph",
+    "services": [
+      "Business One-Stop Shop",
+      "Real Property Tax",
+      "Makati Social Services",
+      "City Health Services",
+      "Makati Scholarship Program",
+      "Building Permit",
+      "Barangay Hall Locator"
+    ]
+  },
+  {
+    "code": "PSY",
+    "name": "Pasay City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Imelda Calixto-Rubiano",
+    "website": "pasay.gov.ph",
+    "services": [
+      "Business Permit",
+      "Real Property Tax",
+      "Civil Registration",
+      "Anti-Red Tape Services",
+      "Pasay City Hospital",
+      "Barangay Clearance"
+    ]
+  },
+  {
+    "code": "CLO",
+    "name": "Caloocan City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Dale Malapitan",
+    "website": "caloocan.gov.ph",
+    "services": [
+      "Business Permit",
+      "Real Property Tax",
+      "Caloocan City Hospital",
+      "Social Services",
+      "Senior Citizen Benefits",
+      "Barangay Clearance",
+      "PWD Services"
+    ]
+  },
+  {
+    "code": "PSG",
+    "name": "Pasig City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Vico Sotto",
+    "website": "pasig.gov.ph",
+    "services": [
+      "eServices Portal",
+      "Business Permit",
+      "City Scholarship",
+      "Pasig City General Hospital",
+      "Anti-Littering Reporting",
+      "Barangay Clearance",
+      "Real Property Tax"
+    ]
+  },
+  {
+    "code": "TGG",
+    "name": "Taguig City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Lino Cayetano",
+    "website": "taguig.gov.ph",
+    "services": [
+      "Business Permit",
+      "Real Property Tax",
+      "Social Services",
+      "City Health Office",
+      "Barangay Clearance",
+      "Scholarship Program",
+      "BGC Services"
+    ]
+  },
+  {
+    "code": "MLG",
+    "name": "Mandaluyong City",
+    "province": "Metro Manila",
+    "region": "NCR",
+    "mayor": "Hon. Menchie Abalos",
+    "website": "mandaluyong.gov.ph",
+    "services": [
+      "Business Permit",
+      "Real Property Tax",
+      "MCSD Services",
+      "Health Services",
+      "Scholarship",
+      "Barangay Clearance"
+    ]
+  }
+]

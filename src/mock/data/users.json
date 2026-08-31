@@ -1,0 +1,41 @@
+[
+  {
+    "id": "user-unverified-01",
+    "mobileNumber": "09171234567",
+    "email": "juan.delacruz@email.com",
+    "fullName": "Juan Santos dela Cruz",
+    "firstName": "Juan",
+    "lastName": "dela Cruz",
+    "middleName": "Santos",
+    "dateOfBirth": "1995-03-15",
+    "sex": "M",
+    "address": "123 Sampaguita St., Brgy. Bagong Silang, Quezon City, Metro Manila 1116",
+    "nationality": "Filipino",
+    "mpinHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verificationStatus": "unverified",
+    "philSysNumber": null,
+    "lguCode": "QC",
+    "profilePhoto": null,
+    "createdAt": "2026-08-01T10:00:00Z"
+  },
+  {
+    "id": "user-verified-01",
+    "mobileNumber": "09189876543",
+    "email": "maria.reyes@email.com",
+    "fullName": "Maria Lourdes Reyes Santos",
+    "firstName": "Maria Lourdes",
+    "lastName": "Reyes Santos",
+    "middleName": "Gomez",
+    "dateOfBirth": "1990-07-22",
+    "sex": "F",
+    "address": "45 Rosal Ave., Brgy. Pinyahan, Quezon City, Metro Manila 1100",
+    "nationality": "Filipino",
+    "mpinHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "verificationStatus": "verified",
+    "philSysNumber": "1234-5678-9012",
+    "lguCode": "QC",
+    "profilePhoto": null,
+    "createdAt": "2026-06-15T09:00:00Z",
+    "verifiedAt": "2026-06-16T14:30:00Z"
+  }
+]

@@ -1,0 +1,98 @@
+[
+  {
+    "id": "dest-001",
+    "name": "Coron, Palawan",
+    "tagline": "Pristine lakes and hidden lagoons",
+    "category": "Island & Beach",
+    "region": "MIMAROPA",
+    "rating": 4.9,
+    "imageColor": "#0EA5E9",
+    "imageEmoji": "🏝️",
+    "description": "Home to crystal-clear Kayangan Lake, stunning limestone cliffs, and some of the Philippines' best dive sites. Known for its rich marine biodiversity and WWII shipwrecks.",
+    "highlights": ["Kayangan Lake", "Twin Lagoon", "Barracuda Lake", "Skeleton Wreck Dive"]
+  },
+  {
+    "id": "dest-002",
+    "name": "Boracay Island",
+    "tagline": "World-famous white sand beach",
+    "category": "Beach & Nightlife",
+    "region": "Western Visayas",
+    "rating": 4.8,
+    "imageColor": "#38BDF8",
+    "imageEmoji": "🌊",
+    "description": "Four kilometers of powdery white sand beach, turquoise waters, and vibrant nightlife. Multiple international awards for best beach destination.",
+    "highlights": ["White Beach", "Puka Shell Beach", "Water Sports", "Sunset Sailing"]
+  },
+  {
+    "id": "dest-003",
+    "name": "Chocolate Hills, Bohol",
+    "tagline": "More than 1,200 cone-shaped hills",
+    "category": "Nature & Wildlife",
+    "region": "Central Visayas",
+    "rating": 4.7,
+    "imageColor": "#84CC16",
+    "imageEmoji": "⛰️",
+    "description": "A UNESCO World Heritage Site candidate featuring over 1,200 perfectly-shaped chocolate-brown hills spread across 50 square kilometers. Also home to the Philippine tarsier.",
+    "highlights": ["Chocolate Hills Complex", "Tarsier Sanctuary", "Loboc River Cruise", "Panglao Beaches"]
+  },
+  {
+    "id": "dest-004",
+    "name": "Sagada, Mountain Province",
+    "tagline": "Hanging coffins and morning mist",
+    "category": "Heritage & Adventure",
+    "region": "Cordillera",
+    "rating": 4.7,
+    "imageColor": "#6B7280",
+    "imageEmoji": "🌄",
+    "description": "A cool mountain town famous for its hanging coffins, limestone caves, pine forests, and breathtaking terraced rice fields. A haven for trekkers and nature lovers.",
+    "highlights": ["Hanging Coffins", "Sumaguing Cave", "Kiltepan Peak Sunrise", "Lake Danum"]
+  },
+  {
+    "id": "dest-005",
+    "name": "Siargao Island",
+    "tagline": "The surfing capital of the Philippines",
+    "category": "Surfing & Adventure",
+    "region": "Caraga",
+    "rating": 4.8,
+    "imageColor": "#F59E0B",
+    "imageEmoji": "🏄",
+    "description": "A tear-shaped island in the Philippine Sea known for its world-class Cloud 9 surf break, crystal lagoons, rock pools, and white-sand sandbars.",
+    "highlights": ["Cloud 9 Surf Break", "Sugba Lagoon", "Sohoton Cove", "Naked Island"]
+  },
+  {
+    "id": "dest-006",
+    "name": "Intramuros, Manila",
+    "tagline": "The Walled City — history lives here",
+    "category": "History & Culture",
+    "region": "National Capital Region",
+    "rating": 4.6,
+    "imageColor": "#D97706",
+    "imageEmoji": "🏰",
+    "description": "The 16th-century walled city and the historic center of Manila. Home to Fort Santiago, San Agustin Church (a UNESCO World Heritage Site), and Rizal Park.",
+    "highlights": ["Fort Santiago", "San Agustin Church", "Casa Manila", "Rizal Park"]
+  },
+  {
+    "id": "dest-007",
+    "name": "Batanes Islands",
+    "tagline": "Where the Pacific meets the South China Sea",
+    "category": "Island & Culture",
+    "region": "Cagayan Valley",
+    "rating": 4.9,
+    "imageColor": "#0284C7",
+    "imageEmoji": "🌬️",
+    "description": "The northernmost province of the Philippines, known for its Ivatan stone houses, rolling hills, lighthouses, and dramatic seascapes. Often called the most beautiful province.",
+    "highlights": ["Batan Island", "Sabtang Island", "Marlboro Hills", "Valugan Boulder Beach"]
+  },
+  {
+    "id": "dest-008",
+    "name": "Vigan, Ilocos Sur",
+    "tagline": "Living UNESCO World Heritage City",
+    "category": "History & Culture",
+    "region": "Ilocos Region",
+    "rating": 4.7,
+    "imageColor": "#B45309",
+    "imageEmoji": "🏛️",
+    "description": "One of the few Hispanic colonial towns in Asia that has retained its original structure. Cobblestone streets, Ancestral houses, and the iconic Bantay Church Bell Tower.",
+    "highlights": ["Calle Crisologo", "Bantay Church", "Baluarte Zoo", "Burnay Pottery"]
+  }
+]

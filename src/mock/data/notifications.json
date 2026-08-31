@@ -1,0 +1,47 @@
+[
+  {
+    "id": "notif-001",
+    "title": "Account Verified Successfully",
+    "body": "Your identity has been verified. You now have full access to eGovPH services.",
+    "timestamp": "2026-06-16T14:30:00Z",
+    "read": false,
+    "type": "success",
+    "icon": "shield-check"
+  },
+  {
+    "id": "notif-002",
+    "title": "SSS Contribution Posted",
+    "body": "Your SSS contribution for July 2026 has been posted. Amount: ₱1,125.00.",
+    "timestamp": "2026-08-05T09:00:00Z",
+    "read": false,
+    "type": "info",
+    "icon": "building"
+  },
+  {
+    "id": "notif-003",
+    "title": "NBI Clearance Ready",
+    "body": "Your NBI Clearance is now available in your Mobile ID wallet.",
+    "timestamp": "2026-02-21T08:00:00Z",
+    "read": true,
+    "type": "info",
+    "icon": "id-card"
+  },
+  {
+    "id": "notif-004",
+    "title": "eTravel QR Generated",
+    "body": "Your arrival declaration for Aug 30, 2026 has been submitted. Your QR code is ready.",
+    "timestamp": "2026-08-28T16:00:00Z",
+    "read": true,
+    "type": "info",
+    "icon": "plane"
+  },
+  {
+    "id": "notif-005",
+    "title": "System Maintenance Notice",
+    "body": "eGovPH will undergo scheduled maintenance on Sep 15, 2026, 12:00–2:00 AM. Some services may be temporarily unavailable.",
+    "timestamp": "2026-09-01T08:00:00Z",
+    "read": false,
+    "type": "warning",
+    "icon": "triangle-alert"
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "question": "How do I verify my account?",
+    "answer": "To verify your account, go to your Profile tab and tap 'Verify Account'. You will need your PhilSys Card Number (National ID number) and be ready for a brief liveness check. Make sure your personal details match your government records exactly."
+  },
+  {
+    "question": "What is PhilSys?",
+    "answer": "PhilSys (Philippine Identification System) is the national ID system established under Republic Act No. 11055. Your PhilSys Card Number (PCN) is the 12-digit number on your National ID card, formatted as XXXX-XXXX-XXXX."
+  },
+  {
+    "question": "How do I access my digital IDs?",
+    "answer": "Tap the 'Mobile ID' tab at the bottom of the screen. Your verified digital IDs will appear there. You must have a verified account to access your IDs. Tap any ID card to view details and your QR code."
+  },
+  {
+    "question": "How do I book an NBI Clearance appointment?",
+    "answer": "Go to the Services tab, then tap 'BPESH Serbisyo Hub', then 'NBI Clearance'. Select your preferred appointment date and time from the available slots. You will receive a reference number after confirming your booking."
+  },
+  {
+    "question": "How do I request a PSA document?",
+    "answer": "From the Services tab, open BPESH Serbisyo Hub and tap 'PSA Documents'. Select the document type (birth certificate, marriage certificate, or death certificate), fill in the required details, and choose delivery method."
+  },
+  {
+    "question": "What is eTravel?",
+    "answer": "eTravel is the official electronic travel declaration system for travelers arriving in or departing from the Philippines. You must file your eTravel declaration within 72 hours before your flight. It replaces the paper health and customs declaration card."
+  },
+  {
+    "question": "How do I link my SSS account?",
+    "answer": "Go to Services → NGAs → SSS. On the Overview tab, tap 'Link your SSS account'. Enter your SSS Member Number and follow the verification steps. Once linked, you can view your contribution history."
+  },
+  {
+    "question": "What is the MPIN and how do I reset it?",
+    "answer": "Your MPIN (Mobile Personal Identification Number) is the 6-digit PIN you use to log in to eGovPH. If you forget it, tap 'Forgot MPIN' on the login screen. You will need to verify your identity via OTP and a liveness check to reset it."
+  },
+  {
+    "question": "How do I file an eReport?",
+    "answer": "From the Services tab, tap 'eReport'. Select the type of incident (crime, fire, road accident, women or child abuse, or online scam), fill in the details, and submit. Remember: eReport is for non-emergency documentation only. For emergencies, call 911."
+  },
+  {
+    "question": "How do I pay government fees through eGovPH?",
+    "answer": "Go to Services → eGovPay. Select the payment item from your list of payables, choose your payment method (GCash, Maya, or OFBank), and confirm. You will receive a receipt once the payment is processed."
+  },
+  {
+    "question": "Is my data safe in eGovPH?",
+    "answer": "eGovPH follows the Data Privacy Act of 2012 (RA 10173). Your data is encrypted and used only for government service delivery purposes. You can review and manage your data privacy settings in Settings → Data & Privacy."
+  },
+  {
+    "question": "Why is my verification still pending?",
+    "answer": "Verification can take a few minutes to a few hours as your information is checked against PhilSys records. You will receive a notification once your account is verified. Make sure your personal details exactly match your National ID records."
+  },
+  {
+    "question": "Can I use eGovPH without an account?",
+    "answer": "Yes — you can use the eTravel feature without creating an account. However, most features require at least a registered account, and features like the Mobile ID wallet and agency services require a verified account."
+  },
+  {
+    "question": "What is BPESH?",
+    "answer": "BPESH stands for Bagong Pilipinas eGovPH Serbisyo Hub. It is the services hub within eGovPH where you can book appointments (NBI Clearance, Police Clearance), request PSA documents, and access other government services."
+  },
+  {
+    "question": "How do I contact an agency for help?",
+    "answer": "Use the Consultation Services feature under the Services tab. Select the agency you want to contact (e.g., DFA, DOLE, PAO for free legal assistance), describe your concern, and submit. A representative will follow up on your inquiry."
+  }
+]

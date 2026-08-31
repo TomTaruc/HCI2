@@ -1,0 +1,35 @@
+{
+  "current": {
+    "city": "Quezon City",
+    "region": "Metro Manila",
+    "temp": 32,
+    "feelsLike": 38,
+    "humidity": 78,
+    "condition": "Partly Cloudy",
+    "conditionCode": "partly-cloudy",
+    "windSpeed": 14,
+    "windDirection": "SW",
+    "uvIndex": 7,
+    "visibility": 10,
+    "pressure": 1009,
+    "updatedAt": "2026-08-31T15:00:00+08:00"
+  },
+  "hourly": [
+    { "hour": "3 PM", "temp": 32, "conditionCode": "partly-cloudy", "rain": 20 },
+    { "hour": "4 PM", "temp": 31, "conditionCode": "partly-cloudy", "rain": 25 },
+    { "hour": "5 PM", "temp": 30, "conditionCode": "cloudy", "rain": 40 },
+    { "hour": "6 PM", "temp": 29, "conditionCode": "rainy", "rain": 65 },
+    { "hour": "7 PM", "temp": 28, "conditionCode": "rainy", "rain": 70 },
+    { "hour": "8 PM", "temp": 27, "conditionCode": "rainy", "rain": 55 },
+    { "hour": "9 PM", "temp": 27, "conditionCode": "partly-cloudy", "rain": 30 },
+    { "hour": "10 PM", "temp": 26, "conditionCode": "partly-cloudy", "rain": 20 }
+  ],
+  "forecast": [
+    { "day": "Mon", "date": "Sep 1", "high": 33, "low": 26, "conditionCode": "partly-cloudy", "rain": 30 },
+    { "day": "Tue", "date": "Sep 2", "high": 31, "low": 25, "conditionCode": "rainy", "rain": 75 },
+    { "day": "Wed", "date": "Sep 3", "high": 29, "low": 24, "conditionCode": "thunderstorm", "rain": 90 },
+    { "day": "Thu", "date": "Sep 4", "high": 30, "low": 25, "conditionCode": "cloudy", "rain": 45 },
+    { "day": "Fri", "date": "Sep 5", "high": 32, "low": 26, "conditionCode": "sunny", "rain": 10 }
+  ],
+  "advisory": "PAGASA has issued a Low Pressure Area (LPA) advisory. Residents are advised to stay updated on weather bulletins and take precautionary measures."
+}
