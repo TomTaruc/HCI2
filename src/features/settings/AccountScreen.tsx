@@ -16,7 +16,7 @@ export function AccountScreen() {
 
   const menuItems = [
     { icon: User, label: 'View Profile', sub: 'Personal info, contact details', path: '/account/profile' },
-    { icon: ShieldCheck, label: 'Account Verification', sub: isVerified ? 'Verified account' : 'Verify to unlock all services', path: isVerified ? '/verify' : '/verify', badge: isVerified ? '✓ Verified' : 'Action needed' },
+    { icon: ShieldCheck, label: 'Account Verification', sub: isVerified ? 'Verified account' : 'Verify to unlock all services', path: isVerified ? '/verify/success' : '/verify', badge: isVerified ? '✓ Verified' : 'Action needed' },
     { icon: Settings, label: 'Settings', sub: 'Security, language, notifications', path: '/account/settings' },
     { icon: Info, label: 'About eGovPH', sub: 'Disclaimer, version, credits', path: '/account/about' },
     { icon: FlaskConical, label: 'Research Tools', sub: 'Seed data, toggle states, research controls', path: '/account/research-tools' },

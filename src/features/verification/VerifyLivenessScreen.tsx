@@ -26,9 +26,18 @@ export function VerifyLivenessScreen() {
   const [step, setStep] = useState(0);
   const [isDone, setIsDone] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [canRetry, setCanRetry] = useState(false);
 
   const personalData = JSON.parse(sessionStorage.getItem('verify_personal') ?? '{}');
   const pcn = sessionStorage.getItem('verify_pcn') ?? '';
+
+  // H-03: Guard — redirect to flow start if required data is missing
+  useEffect(() => {
+    if (!sessionStorage.getItem('verify_personal') || !sessionStorage.getItem('verify_pcn')) {
+      navigate('/verify/pcn', { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     let totalDelay = 0;
@@ -51,6 +60,10 @@ export function VerifyLivenessScreen() {
               });
               refreshUser();
               setIsDone(true);
+            } catch (err: unknown) {
+              // C-03: Show error and allow retry
+              setSubmitError(err instanceof Error ? err.message : 'Verification submission failed. Please try again.');
+              setCanRetry(true);
             } finally {
               setIsSubmitting(false);
             }
@@ -165,13 +178,37 @@ export function VerifyLivenessScreen() {
 
         {/* Bottom notice */}
         <div className="absolute bottom-8 left-4 right-4">
-          <div className="bg-black/60 rounded-lg px-4 py-3 text-center">
-            <p className="text-white/70 text-xs">
-              This is a simulated identity check for research purposes only. No biometric data is captured or processed.
-            </p>
-          </div>
+          {submitError ? (
+            <div className="bg-red-900/90 rounded-lg px-4 py-4 text-center flex flex-col gap-3">
+              <p className="text-white text-sm font-semibold">⚠ Verification Failed</p>
+              <p className="text-white/80 text-xs">{submitError}</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => navigate('/verify/pcn', { replace: true })}
+                  className="flex-1 h-9 bg-white/20 rounded-md text-white text-xs font-semibold hover:bg-white/30 transition-colors"
+                >
+                  Go Back
+                </button>
+                {canRetry && (
+                  <button
+                    onClick={() => { setSubmitError(''); setCanRetry(false); setStep(0); setIsDone(false); }}
+                    className="flex-1 h-9 bg-white rounded-md text-red-900 text-xs font-semibold hover:bg-white/90 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-black/60 rounded-lg px-4 py-3 text-center">
+              <p className="text-white/70 text-xs">
+                This is a simulated identity check for research purposes only. No biometric data is captured or processed.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
+

@@ -33,6 +33,7 @@ export function IDWalletScreen() {
   const [ids, setIds] = useState<DigitalID[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0); // M-10: Trigger re-fetch on retry
 
   const isVerified = user?.verificationStatus === 'verified';
 
@@ -50,7 +51,7 @@ export function IDWalletScreen() {
       }
     };
     load();
-  }, []);
+  }, [retryCount]);
 
   if (!isVerified) {
     return (
@@ -121,7 +122,7 @@ export function IDWalletScreen() {
           <ErrorState
             title="Couldn't load IDs"
             description={error}
-            onRetry={() => { setError(''); setIsLoading(true); }}
+            onRetry={() => { setError(''); setRetryCount(c => c + 1); }}
           />
         )}
 

@@ -3,7 +3,7 @@
  * 12-digit PhilSys Card Number entry (4-4-4 format mask) + "Scan ID" mock.
  * Validates against the mock PhilSys record.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScanLine, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,6 +29,13 @@ export function VerifyPCNScreen() {
   const [error, setError] = useState('');
 
   const personalData = JSON.parse(sessionStorage.getItem('verify_personal') ?? '{}');
+
+  // H-03: Guard — redirect to start of flow if personal info is missing
+  useEffect(() => {
+    if (!sessionStorage.getItem('verify_personal')) {
+      navigate('/verify/personal-info', { replace: true });
+    }
+  }, [navigate]);
 
   const handlePCNChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPCN(e.target.value);
@@ -170,9 +177,12 @@ export function VerifyPCNScreen() {
             )}
           </AnimatePresence>
 
-          {/* Demo hint */}
+          {/* M-09: Updated demo hint with correct PCN per account */}
           <div className="bg-accent/20 border border-accent rounded-lg px-4 py-3">
-            <p className="text-body-sm text-text-primary font-semibold">🔬 Demo: Try PCN <code>1234-5678-9012</code> (for verified account profile)</p>
+            <p className="text-body-sm text-text-primary font-semibold mb-1">🔬 Demo: Use the PCN for your logged-in account:</p>
+            <p className="text-body-sm text-text-primary">• <strong>Juan Santos dela Cruz</strong> (unverified) → <code>0000-0000-0001</code></p>
+            <p className="text-body-sm text-text-primary">• <strong>Maria Reyes Santos</strong> (verified) → <code>1234-5678-9012</code></p>
+            <p className="text-body-sm text-text-secondary mt-1">Or tap <strong>Scan your ID</strong> to auto-fill.</p>
           </div>
 
           <Button

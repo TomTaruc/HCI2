@@ -18,6 +18,7 @@ export function VerifyPendingScreen() {
   const { user, refreshUser } = useAuth();
   const [elapsed, setElapsed] = useState(0);
   const [isApproved, setIsApproved] = useState(false);
+  const hasFired = React.useRef(false); // H-08: Prevent double navigation
 
   const instantVerify = db.get<boolean>('instantVerify') ?? false;
   const duration = instantVerify ? 500 : PENDING_DURATION_MS;
@@ -25,9 +26,11 @@ export function VerifyPendingScreen() {
   useEffect(() => {
     // Poll verification status every 2 seconds
     const poll = setInterval(async () => {
-      if (!user) return;
+      if (!user || hasFired.current) return;
       const status = await getVerificationStatus(user.id);
       if (status === 'verified') {
+        if (hasFired.current) return; // H-08: Guard against double fire
+        hasFired.current = true;
         clearInterval(poll);
         setIsApproved(true);
         setTimeout(() => navigate('/verify/success'), 800);
@@ -36,7 +39,8 @@ export function VerifyPendingScreen() {
 
     // Auto-approve after duration
     const approve = setTimeout(async () => {
-      if (!user) return;
+      if (!user || hasFired.current) return; // H-08: Guard + null check
+      hasFired.current = true;
       await approveVerification(user.id);
       refreshUser();
       clearInterval(poll);

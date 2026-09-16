@@ -33,8 +33,9 @@ export function EGovPayScreen() {
     await new Promise(r => setTimeout(r, 1500));
     const ref = 'PAY-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
-    const payments = db.get<unknown[]>('payments') ?? [];
-    db.set('payments', [...payments, { id: ref, ...selected, method: payMethod, date: new Date().toISOString() }]);
+    // C-04: Fixed key from 'payments' to 'eGovPayPayments' to match db seed
+    const payments = db.get<unknown[]>('eGovPayPayments') ?? [];
+    db.set('eGovPayPayments', [...payments, { id: ref, ...selected, method: payMethod, date: new Date().toISOString() }]);
     setIsLoading(false);
     setDone(true);
   };

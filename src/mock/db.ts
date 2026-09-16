@@ -112,11 +112,13 @@ export function delay(ms: number): Promise<void> {
 // ----------------------------------------------------------------
 
 export class ApiError extends Error {
+  public code: string;
   constructor(
-    public code: string,
+    code: string,
     message?: string
   ) {
     super(message ?? code);
+    this.code = code;
     this.name = 'ApiError';
   }
 }

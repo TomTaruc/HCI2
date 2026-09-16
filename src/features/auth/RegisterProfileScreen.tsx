@@ -37,7 +37,9 @@ export function RegisterProfileScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUser } = useAuth();
-  const state = (location.state as { mobileNumber: string; mpin: string });
+  const state = (location.state as { mobileNumber: string });
+  // C-02: Read MPIN from sessionStorage (was plain nav state — security fix)
+  const mpin = sessionStorage.getItem('reg_mpin') ?? '';
 
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -59,8 +61,10 @@ export function RegisterProfileScreen() {
         middleName: data.middleName,
         dateOfBirth: data.dateOfBirth,
         sex: data.sex,
-        mpin: state.mpin,
+        mpin: mpin,
       });
+      // C-02: Clear the temporary MPIN from sessionStorage
+      sessionStorage.removeItem('reg_mpin');
       setUser(newUser);
       navigate('/register/email-verify', { state: { email: data.email } });
     } catch (err: unknown) {

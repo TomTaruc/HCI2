@@ -1,7 +1,7 @@
 /**
  * ForgotMPINScreen — OTP verification → liveness mock → reset MPIN
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { KeyRound } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -32,8 +32,21 @@ export function ForgotMPINScreen() {
   const [livenessStep, setLivenessStep] = useState(0);
   const livenessPrompts = ['Hold still…', 'Blink now…', 'Turn slightly right…', 'Verifying…'];
 
+  // L-07: Auto-send OTP if we have a prefilled mobile number
+  useEffect(() => {
+    if (prefillMobile && stage === 'otp') {
+      requestOTP(prefillMobile).catch(() => setError('Could not send OTP. Try again.'));
+    }
+  }, [prefillMobile, stage]);
+
   const handleSendOTP = async () => {
     if (!mobileNumber.match(/^09\d{9}$/)) { setError('Enter a valid mobile number.'); return; }
+    // L-02: Check if mobile number actually exists
+    const users = db.get<User[]>('users') ?? [];
+    if (!users.find(u => u.mobileNumber === mobileNumber)) {
+      setError('No account found with this mobile number.');
+      return;
+    }
     setIsLoading(true);
     try {
       await requestOTP(mobileNumber);

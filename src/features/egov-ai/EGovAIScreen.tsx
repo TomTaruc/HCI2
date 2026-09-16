@@ -99,7 +99,15 @@ export function EGovAIScreen() {
                 ? 'bg-primary text-white rounded-tr-sm'
                 : 'bg-white border border-border text-text-primary rounded-tl-sm',
             ].join(' ')}>
-              {msg.text.split('\n').map((line, i) => <p key={i} className={i > 0 ? 'mt-1' : ''}>{line}</p>)}
+              {msg.text.split('\n').map((line, i) => (
+                <p key={i} className={i > 0 ? 'mt-1' : ''}>
+                  {line.split(/(\*\*.*?\*\*)/).map((part, j) => 
+                    part.startsWith('**') && part.endsWith('**') 
+                      ? <strong key={j}>{part.slice(2, -2)}</strong> 
+                      : part
+                  )}
+                </p>
+              ))}
             </div>
           </motion.div>
         ))}

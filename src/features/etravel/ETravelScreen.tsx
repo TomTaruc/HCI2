@@ -21,8 +21,16 @@ export function ETravelScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [refNumber, setRefNumber] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', passport: '', nationality: 'Filipino', flightNumber: '', departureDate: '', arrivalDate: '', origin: '', destination: '', purpose: '', vaccine: '' });
+  // H-07: Track health declaration answers
+  const [healthAnswers, setHealthAnswers] = useState<Record<number, 'Yes' | 'No'>>({});
+  const HEALTH_QUESTIONS = [
+    'Do you have a fever (38\u00b0C or above) or any flu-like symptoms?',
+    'Have you had close contact with a confirmed case in the past 14 days?',
+    'Have you traveled to any country with a health alert in the past 14 days?',
+  ];
 
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
+  const setHealthAnswer = (idx: number, ans: 'Yes' | 'No') => setHealthAnswers(p => ({ ...p, [idx]: ans }));
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -30,7 +38,9 @@ export function ETravelScreen() {
     const ref = 'ET-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
     const declarations = db.get<unknown[]>('etravelDeclarations') ?? [];
-    db.set('etravelDeclarations', [...declarations, { id: ref, travelType, ...form }]);
+    // H-07: Include health answers in payload
+    const healthDeclaration = HEALTH_QUESTIONS.reduce((acc, q, i) => ({ ...acc, [q]: healthAnswers[i] ?? 'Not answered' }), {});
+    db.set('etravelDeclarations', [...declarations, { id: ref, travelType, ...form, healthDeclaration }]);
     setIsLoading(false);
     setStage('done');
   };
@@ -116,14 +126,18 @@ export function ETravelScreen() {
             <>
               <h2 className="text-h1 font-bold text-text-primary">Health Declaration</h2>
               <div className="flex flex-col gap-3">
-                {['Do you have a fever (38°C or above) or any flu-like symptoms?',
-                  'Have you had close contact with a confirmed case in the past 14 days?',
-                  'Have you traveled to any country with a health alert in the past 14 days?'].map((q, i) => (
+                {/* H-07: Health questions with tracked answers and visual selection */}
+                {HEALTH_QUESTIONS.map((q, i) => (
                   <div key={i} className="bg-white border border-border rounded-lg p-4">
                     <p className="text-body-sm text-text-primary">{q}</p>
                     <div className="flex gap-3 mt-2">
-                      {['Yes', 'No'].map(a => (
-                        <button key={a} className="flex-1 h-9 border rounded-md text-body-sm font-semibold hover:border-primary hover:bg-primary-light transition-all border-border text-text-secondary">
+                      {(['Yes', 'No'] as const).map(a => (
+                        <button key={a} onClick={() => setHealthAnswer(i, a)}
+                          className={`flex-1 h-9 border rounded-md text-body-sm font-semibold transition-all ${
+                            healthAnswers[i] === a
+                              ? a === 'Yes' ? 'bg-error text-white border-error' : 'bg-success text-white border-success'
+                              : 'border-border text-text-secondary hover:border-primary hover:bg-primary-light'
+                          }`}>
                           {a}
                         </button>
                       ))}
@@ -132,7 +146,13 @@ export function ETravelScreen() {
                 ))}
                 <Input label="COVID-19 Vaccination Status" placeholder="e.g., Fully vaccinated — Pfizer (3 doses)" value={form.vaccine} onChange={e => update('vaccine', e.target.value)} />
               </div>
-              <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSubmit}>Submit Declaration</Button>
+              <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSubmit}
+                disabled={HEALTH_QUESTIONS.some((_, i) => !healthAnswers[i])}>
+                Submit Declaration
+              </Button>
+              {HEALTH_QUESTIONS.some((_, i) => !healthAnswers[i]) && (
+                <p className="text-body-sm text-text-secondary text-center">Please answer all health questions to continue.</p>
+              )}
             </>
           )}
 

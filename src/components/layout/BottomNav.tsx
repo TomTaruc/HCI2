@@ -18,11 +18,11 @@ interface NavItem {
 }
 
 export function BottomNav() {
-  const { user } = useAuth();
+  const { user, sessionStatus } = useAuth();
   const location = useLocation();
 
-  // Only show bottom nav when logged in
-  if (!user) return null;
+  // Only show bottom nav when logged in AND session is not locked
+  if (!user || sessionStatus === 'locked') return null;
 
   // Don't show on auth flows or full-screen views
   const hideOn = ['/splash', '/welcome', '/register', '/login', '/verify/liveness', '/id/qr'];
@@ -106,7 +106,7 @@ export function BottomNav() {
             <NavLink
               key={item.path}
               to={item.path}
-              className="flex flex-col items-center justify-center gap-0.5 h-full flex-1 min-w-0"
+              className="flex flex-col items-center justify-center gap-0.5 h-full flex-1 min-w-0 relative"
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
             >

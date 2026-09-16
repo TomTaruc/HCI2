@@ -27,8 +27,9 @@ export function EReportScreen() {
     await new Promise(r => setTimeout(r, 1200));
     const ref = 'RPT-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
-    const reports = db.get<unknown[]>('reports') ?? [];
-    db.set('reports', [...reports, { id: ref, incidentType, location, description, status: 'received' }]);
+    // H-01: Fixed key from 'reports' to 'eReports' to match db seed
+    const reports = db.get<unknown[]>('eReports') ?? [];
+    db.set('eReports', [...reports, { id: ref, incidentType, location, description, status: 'received' }]);
     setIsLoading(false);
     setDone(true);
   };

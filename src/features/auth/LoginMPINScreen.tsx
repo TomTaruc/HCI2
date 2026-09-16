@@ -12,6 +12,9 @@ import { MPINInput } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../state/AuthContext';
 
+// H-02: Demo accounts that support simulated biometric login
+const DEMO_MOBILES = ['09171234567', '09189876543'];
+
 export function LoginMPINScreen() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -22,6 +25,8 @@ export function LoginMPINScreen() {
   const [mpinError, setMpinError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'mobile' | 'mpin'>('mobile');
+
+  const isDemoAccount = DEMO_MOBILES.includes(mobileNumber);
 
   const handleMobileSubmit = () => {
     if (!mobileNumber.match(/^09\d{9}$/)) {
@@ -140,17 +145,22 @@ export function LoginMPINScreen() {
 
               {/* Biometric mock */}
               <button
-                className="flex flex-col items-center gap-2 py-4 text-text-secondary hover:text-primary transition-colors"
+                className={`flex flex-col items-center gap-2 py-4 transition-colors ${isDemoAccount ? 'text-text-secondary hover:text-primary' : 'text-text-secondary/40 cursor-not-allowed'}`}
                 onClick={() => {
-                  // Simulate biometric success
+                  if (!isDemoAccount) {
+                    setMpinError('Biometric login is only available for demo accounts.');
+                    return;
+                  }
+                  // H-02: Biometric simulated for demo accounts only
                   login(mobileNumber, '111111')
                     .then(() => navigate('/home', { replace: true }))
-                    .catch(() => setMpinError('Biometric login not available. Use MPIN.'));
+                    .catch(() => setMpinError('Biometric authentication failed. Please use your MPIN.'));
                 }}
-                aria-label="Use biometric login (simulated)"
+                aria-label={isDemoAccount ? 'Use biometric login (simulated)' : 'Biometric login not available for this account'}
+                title={isDemoAccount ? 'Tap to simulate biometric login' : 'Only available for demo accounts'}
               >
                 <Fingerprint size={36} strokeWidth={1.5} />
-                <span className="text-body-sm font-medium">Use Biometric</span>
+                <span className="text-body-sm font-medium">{isDemoAccount ? 'Use Biometric' : 'Biometric (Demo Only)'}</span>
               </button>
 
               {/* Forgot MPIN */}

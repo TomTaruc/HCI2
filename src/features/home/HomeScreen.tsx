@@ -3,7 +3,7 @@
  * Shows different content for unverified (locked tiles) and verified users.
  * Matches the real app's tile grid + announcement carousel + services layout.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, Lock, ChevronRight, MapPin, Sun, Wifi, MessageCircle } from 'lucide-react';
@@ -38,6 +38,7 @@ const ANNOUNCEMENTS = [
     subtitle: 'Avail Services →',
     bg: 'bg-primary',
     textColor: 'text-white',
+    path: '/bpesh', // M-05: correct path
   },
   {
     id: 2,
@@ -45,6 +46,7 @@ const ANNOUNCEMENTS = [
     subtitle: 'No more long queues — book in minutes →',
     bg: 'bg-secondary',
     textColor: 'text-white',
+    path: '/bpesh/appointment', // M-05: correct path
   },
   {
     id: 3,
@@ -52,6 +54,7 @@ const ANNOUNCEMENTS = [
     subtitle: 'Access your BIR TIN ID in the Mobile ID wallet →',
     bg: 'bg-accent',
     textColor: 'text-text-primary',
+    path: '/id/qr', // M-05: correct path
   },
 ];
 
@@ -61,6 +64,14 @@ export function HomeScreen() {
   const [carouselIdx, setCarouselIdx] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const isVerified = user?.verificationStatus === 'verified';
+
+  // M-04: Auto-rotate carousel every 5 seconds
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCarouselIdx(prev => (prev + 1) % ANNOUNCEMENTS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const visibleTiles = showAll ? ALL_TILES : ALL_TILES.slice(0, 8);
 
@@ -165,7 +176,7 @@ export function HomeScreen() {
                     {ANNOUNCEMENTS[carouselIdx].title}
                   </p>
                   <button
-                    onClick={() => navigate('/bpesh')}
+                    onClick={() => navigate(ANNOUNCEMENTS[carouselIdx].path)}
                     className={`text-body-sm font-semibold mt-1 ${ANNOUNCEMENTS[carouselIdx].textColor} opacity-80 hover:opacity-100`}
                   >
                     {ANNOUNCEMENTS[carouselIdx].subtitle}

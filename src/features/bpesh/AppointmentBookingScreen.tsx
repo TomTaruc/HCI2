@@ -33,6 +33,12 @@ export function AppointmentBookingScreen() {
   const [refNumber, setRefNumber] = useState('');
 
   const handleConfirm = async () => {
+    // M-03: Validate that selected date is not in the past
+    const selected = new Date(selectedDate + 'T12:00:00');
+    if (selected < tomorrow) {
+      alert('Please select a future date for your appointment.');
+      return;
+    }
     setIsLoading(true);
     await new Promise(r => setTimeout(r, 1500));
     const ref = generateRef();
@@ -111,7 +117,7 @@ export function AppointmentBookingScreen() {
               <div className="bg-white border border-border rounded-lg divide-y divide-border">
                 {[
                   { label: 'Service', value: selectedService },
-                  { label: 'Date', value: new Date(selectedDate).toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
+                  { label: 'Date', value: new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) },
                   { label: 'Time', value: selectedTime },
                   { label: 'Purpose', value: purpose || 'Not specified' },
                 ].map(({ label, value }) => (

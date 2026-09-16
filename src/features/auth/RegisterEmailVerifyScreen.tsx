@@ -2,7 +2,7 @@
  * RegisterEmailVerifyScreen — Step 5
  * Email verification pending. Mock: auto-advances on button tap.
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -14,6 +14,7 @@ export function RegisterEmailVerifyScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const email = (location.state as { email: string })?.email ?? 'your email';
+  const [resendSent, setResendSent] = useState(false); // L-01: State for resend button
 
   return (
     <div className="flex-1 flex flex-col">
@@ -56,9 +57,10 @@ export function RegisterEmailVerifyScreen() {
               variant="ghost"
               fullWidth
               size="md"
-              onClick={() => {}}
+              onClick={() => { setResendSent(true); setTimeout(() => setResendSent(false), 3000); }}
+              disabled={resendSent}
             >
-              Resend verification email
+              {resendSent ? 'Verification link resent!' : 'Resend verification link'}
             </Button>
           </div>
 

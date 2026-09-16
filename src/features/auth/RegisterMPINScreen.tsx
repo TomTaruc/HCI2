@@ -1,9 +1,11 @@
 /**
  * RegisterMPINScreen — Step 3 of registration
  * Create and confirm a 6-digit MPIN using the numpad.
+ * SECURITY NOTE: MPIN is stored temporarily in sessionStorage (cleared after registration)
+ * rather than plain-text navigation state.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -42,7 +44,9 @@ export function RegisterMPINScreen() {
       setConfirmMpin('');
       return;
     }
-    navigate('/register/profile', { state: { mobileNumber, mpin } });
+    // Store MPIN in sessionStorage instead of plain nav state (C-02)
+    sessionStorage.setItem('reg_mpin', mpin);
+    navigate('/register/profile', { state: { mobileNumber } });
   };
 
   const handleBack = () => {
@@ -112,6 +116,3 @@ export function RegisterMPINScreen() {
     </div>
   );
 }
-
-// Fix missing import
-import { useEffect } from 'react';

@@ -52,6 +52,11 @@ export function RegisterOTPScreen() {
       setOtpError('Please enter all 6 digits.');
       return;
     }
+    // H-05: Block submission if OTP has expired
+    if (countdown === 0) {
+      setOtpError('Your OTP has expired. Please request a new one.');
+      return;
+    }
     setIsVerifying(true);
     setOtpError('');
     try {
@@ -68,11 +73,14 @@ export function RegisterOTPScreen() {
     }
   }, [otp, mobileNumber, navigate]);
 
-  // Auto-submit when 6 digits entered
+  // Auto-submit when 6 digits entered — H-05: also check countdown
   const handleOTPChange = (value: string) => {
     setOtp(value);
     setOtpError('');
-    if (value.length === 6) handleVerify(value);
+    if (value.length === 6 && countdown > 0) handleVerify(value);
+    else if (value.length === 6 && countdown === 0) {
+      setOtpError('Your OTP has expired. Please request a new one.');
+    }
   };
 
   const handleResend = async () => {

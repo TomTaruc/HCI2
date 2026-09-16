@@ -6,14 +6,14 @@ import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../state/AuthContext';
-import { db } from '../../mock/db';
+import { db, resetDatabase } from '../../mock/db';
 
 export function ResearchToolsScreen() {
   const { user } = useAuth();
 
   const handleReset = () => {
     if (window.confirm('Are you sure you want to reset all data? This will log you out and clear all localStorage state.')) {
-      localStorage.clear();
+      resetDatabase(); // M-06: Use central reset function instead of direct localStorage manipulation
       window.location.href = '/';
     }
   };
