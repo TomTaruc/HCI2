@@ -40,7 +40,7 @@ export function ForgotMPINScreen() {
   }, [prefillMobile, stage]);
 
   const handleSendOTP = async () => {
-    if (!mobileNumber.match(/^09\d{9}$/)) { setError('Enter a valid mobile number.'); return; }
+    if (!mobileNumber.match(/^9\d{9}$/)) { setError('Enter a valid 10-digit mobile number starting with 9.'); return; }
     // L-02: Check if mobile number actually exists
     const users = db.get<User[]>('users') ?? [];
     if (!users.find(u => u.mobileNumber === mobileNumber)) {
@@ -110,7 +110,7 @@ export function ForgotMPINScreen() {
               </div>
               <h1 className="text-h1 font-bold text-text-primary">Reset your MPIN</h1>
               <p className="text-body text-text-secondary">Enter your registered mobile number to begin.</p>
-              <Input label="Mobile Number" type="tel" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} error={error} placeholder="09XXXXXXXXX" maxLength={11} />
+              <Input label="Mobile Number" type="tel" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} error={error} placeholder="9XXXXXXXXX" maxLength={10} leftIcon={<span className="text-text-secondary text-body-sm font-semibold">+63</span>} />
               <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSendOTP}>Send OTP</Button>
             </>
           )}

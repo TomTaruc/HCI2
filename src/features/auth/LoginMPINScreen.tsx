@@ -13,7 +13,7 @@ import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../state/AuthContext';
 
 // H-02: Demo accounts that support simulated biometric login
-const DEMO_MOBILES = ['09171234567', '09189876543'];
+const DEMO_MOBILES = ['9171234567', '9189876543'];
 
 export function LoginMPINScreen() {
   const navigate = useNavigate();
@@ -29,8 +29,8 @@ export function LoginMPINScreen() {
   const isDemoAccount = DEMO_MOBILES.includes(mobileNumber);
 
   const handleMobileSubmit = () => {
-    if (!mobileNumber.match(/^09\d{9}$/)) {
-      setMobileError('Enter a valid 10-digit Philippine mobile number.');
+    if (!mobileNumber.match(/^9\d{9}$/)) {
+      setMobileError('Enter a valid 10-digit Philippine mobile number starting with 9.');
       return;
     }
     setMobileError('');
@@ -102,22 +102,22 @@ export function LoginMPINScreen() {
                   🔬 Seeded accounts:
                 </p>
                 <p className="text-body-sm text-text-secondary">
-                  <strong>Unverified:</strong> 09171234567 · MPIN: 111111
+                  <strong>Unverified:</strong> 9171234567 · MPIN: 111111
                 </p>
                 <p className="text-body-sm text-text-secondary">
-                  <strong>Verified:</strong> 09189876543 · MPIN: 111111
+                  <strong>Verified:</strong> 9189876543 · MPIN: 111111
                 </p>
               </div>
 
               <Input
                 label="Mobile Number"
                 type="tel"
-                placeholder="09XXXXXXXXX"
+                placeholder="9XXXXXXXXX"
                 value={mobileNumber}
                 onChange={e => { setMobileNumber(e.target.value); setMobileError(''); }}
                 error={mobileError}
                 leftIcon={<span className="text-text-secondary text-body-sm font-semibold">+63</span>}
-                maxLength={11}
+                maxLength={10}
                 autoFocus
               />
               <Button variant="primary" fullWidth size="lg" onClick={handleMobileSubmit}>

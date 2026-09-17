@@ -7,6 +7,8 @@ import { Wifi } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 
+import { useServices } from '../../state/ServiceContext';
+
 type Stage = 'idle' | 'ping' | 'download' | 'upload' | 'done';
 
 export function SpeedTestScreen() {
@@ -16,30 +18,36 @@ export function SpeedTestScreen() {
   const [upload, setUpload] = useState(0);
   const [progress, setProgress] = useState(0);
 
+  const { speed, refreshSpeed } = useServices();
+
   const runTest = async () => {
+    refreshSpeed();
     setStage('ping');
     setProgress(0);
-    // Simulate ping test
+    // Simulate ping test animation up to actual RTT
+    const targetPing = speed.rtt || 24;
     await new Promise(r => setTimeout(r, 800));
-    setPing(Math.floor(Math.random() * 40 + 5));
+    setPing(targetPing);
     setProgress(25);
 
     setStage('download');
+    const targetDown = speed.downlink || 25;
     for (let i = 0; i <= 30; i++) {
       await new Promise(r => setTimeout(r, 60));
-      setDownload(Math.floor(i * (Math.random() * 2 + 15)));
+      setDownload(Math.floor(i * (Math.random() * 2 + (targetDown / 30))));
       setProgress(25 + i * 1.5);
     }
-    setDownload(Math.floor(Math.random() * 40 + 20));
+    setDownload(targetDown);
     setProgress(70);
 
     setStage('upload');
+    const targetUp = targetDown > 10 ? Math.floor(targetDown * 0.4) : 5;
     for (let i = 0; i <= 20; i++) {
       await new Promise(r => setTimeout(r, 60));
-      setUpload(Math.floor(i * (Math.random() + 5)));
+      setUpload(Math.floor(i * (Math.random() + (targetUp / 20))));
       setProgress(70 + i * 1.5);
     }
-    setUpload(Math.floor(Math.random() * 20 + 8));
+    setUpload(targetUp);
     setProgress(100);
     setStage('done');
   };
@@ -112,7 +120,7 @@ export function SpeedTestScreen() {
         )}
 
         <p className="text-body-sm text-text-secondary text-center">
-          This is a simulated speed test for demo purposes. Results do not reflect actual internet speed.
+          Results are based on local network condition estimates using the Network Information API.
         </p>
       </ScreenContainer>
     </div>

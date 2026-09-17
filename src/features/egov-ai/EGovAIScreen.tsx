@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { useNavigate } from 'react-router-dom';
+import { useServices } from '../../state/ServiceContext';
 
 interface Message {
   id: number;
@@ -37,7 +38,17 @@ const RULES: [RegExp, string | (() => string)][] = [
   [/help|what can you do/i, 'I can help you with:\n• Navigating eGovPH services\n• Understanding government requirements\n• Finding appointment and payment options\n• Explaining your Digital ID wallet\n\nJust ask me anything!'],
 ];
 
-function getResponse(input: string): string {
+function getResponse(input: string, services: ReturnType<typeof useServices>): string {
+  // Dynamic rules based on context
+  if (/weather/i.test(input)) {
+    if (!services.weather) return 'I am currently unable to fetch the weather. Please check the Weather service.';
+    return `The current weather in Quezon City is **${services.weather.temp}°C** and **${services.weather.condition}**.`;
+  }
+  if (/speed|internet/i.test(input)) {
+    if (!services.speed.downlink) return 'I am currently unable to measure your network speed. Try the Speed Test service.';
+    return `Based on your network connection, your estimated download speed is **${services.speed.downlink} Mbps** with a ping of **${services.speed.rtt} ms**.`;
+  }
+
   for (const [pattern, response] of RULES) {
     if (pattern.test(input)) {
       return typeof response === 'function' ? response() : response;
@@ -50,6 +61,7 @@ let msgId = 0;
 
 export function EGovAIScreen() {
   const navigate = useNavigate();
+  const services = useServices();
   const [messages, setMessages] = useState<Message[]>([
     { id: msgId++, role: 'assistant', text: 'Mabuhay! 👋 I\'m the eGov AI Assistant — your guide to Philippine government services. Ask me about ePhilID, NBI Clearance, SSS, PhilHealth, eTravel, and more!' },
   ]);
@@ -69,7 +81,7 @@ export function EGovAIScreen() {
     setMessages(m => [...m, userMsg]);
     setIsTyping(true);
     await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
-    const response = getResponse(msg);
+    const response = getResponse(msg, services);
     setIsTyping(false);
     setMessages(m => [...m, { id: msgId++, role: 'assistant', text: response }]);
   };

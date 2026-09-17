@@ -63,7 +63,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border bottom-safe z-50"
+      className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-full md:max-w-[768px] bg-white border-t border-border bottom-safe z-50"
       aria-label="Main navigation"
     >
       <div className="flex items-end justify-around h-16 px-2">

@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Bell } from 'lucide-react';
 import { db } from '../../mock/db';
 
 interface AppBarProps {
@@ -45,17 +45,30 @@ export function AppBar({
       ].join(' ')}
     >
       {showBack && (
-        <button
-          onClick={handleBack}
-          className={[
-            'w-9 h-9 -ml-1 flex items-center justify-center rounded-full',
-            'hover:bg-primary-light transition-colors',
-            light ? 'text-white' : 'text-text-primary',
-          ].join(' ')}
-          aria-label="Go back"
-        >
-          <ChevronLeft size={22} strokeWidth={2.5} />
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={handleBack}
+            className={[
+              'w-9 h-9 -ml-1 flex items-center justify-center rounded-full',
+              'hover:bg-primary-light transition-colors',
+              light ? 'text-white' : 'text-text-primary',
+            ].join(' ')}
+            aria-label="Go back"
+          >
+            <ChevronLeft size={22} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={() => navigate(1)}
+            className={[
+              'w-9 h-9 flex items-center justify-center rounded-full',
+              'hover:bg-primary-light transition-colors',
+              light ? 'text-white' : 'text-text-primary',
+            ].join(' ')}
+            aria-label="Go forward"
+          >
+            <ChevronRight size={22} strokeWidth={2.5} />
+          </button>
+        </div>
       )}
 
       {!showBack && !transparent && (

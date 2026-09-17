@@ -1,7 +1,7 @@
 [
   {
     "id": "user-unverified-01",
-    "mobileNumber": "09171234567",
+    "mobileNumber": "9171234567",
     "email": "juan.delacruz@email.com",
     "fullName": "Juan Santos dela Cruz",
     "firstName": "Juan",
@@ -20,7 +20,7 @@
   },
   {
     "id": "user-verified-01",
-    "mobileNumber": "09189876543",
+    "mobileNumber": "9189876543",
     "email": "maria.reyes@email.com",
     "fullName": "Maria Lourdes Reyes Santos",
     "firstName": "Maria Lourdes",

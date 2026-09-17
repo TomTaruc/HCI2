@@ -25,6 +25,11 @@ const schema = z.object({
   email: z.string().email('Enter a valid email address'),
   dateOfBirth: z.string().min(1, 'Date of birth is required').refine(val => {
     const date = new Date(val);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date <= today;
+  }, 'Date of birth cannot be in the future').refine(val => {
+    const date = new Date(val);
     const age = (Date.now() - date.getTime()) / (365.25 * 24 * 3600 * 1000);
     return age >= 15 && age <= 120;
   }, 'You must be at least 15 years old to register'),
