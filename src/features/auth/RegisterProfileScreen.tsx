@@ -42,7 +42,7 @@ export function RegisterProfileScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setUserAfterSignup } = useAuth();
-  const state = (location.state as { mobileNumber: string });
+  const state = (location.state as { mobileNumber: string; challengeId: string });
   // C-02: Read MPIN from sessionStorage (was plain nav state — security fix)
   const mpin = sessionStorage.getItem('reg_mpin') ?? '';
 
@@ -67,6 +67,7 @@ export function RegisterProfileScreen() {
         dateOfBirth: data.dateOfBirth,
         sex: data.sex,
         mpin: mpin,
+        challengeId: state.challengeId,
       });
       // C-02: Clear the temporary MPIN from sessionStorage
       sessionStorage.removeItem('reg_mpin');

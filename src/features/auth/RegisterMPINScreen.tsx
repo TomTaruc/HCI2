@@ -18,7 +18,8 @@ import { StepIndicator } from './RegisterMobileScreen';
 export function RegisterMPINScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const mobileNumber = (location.state as { mobileNumber: string })?.mobileNumber;
+  const mobileNumber = (location.state as { mobileNumber: string; challengeId: string })?.mobileNumber;
+  const challengeId = (location.state as { mobileNumber: string; challengeId: string })?.challengeId;
 
   const [stage, setStage] = useState<'create' | 'confirm'>('create');
   const [mpin, setMpin] = useState('');
@@ -46,7 +47,7 @@ export function RegisterMPINScreen() {
     }
     // Store MPIN in sessionStorage instead of plain nav state (C-02)
     sessionStorage.setItem('reg_mpin', mpin);
-    navigate('/register/profile', { state: { mobileNumber } });
+    navigate('/register/profile', { state: { mobileNumber, challengeId } });
   };
 
   const handleBack = () => {

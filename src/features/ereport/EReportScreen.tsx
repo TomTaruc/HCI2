@@ -10,11 +10,13 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 const INCIDENT_TYPES = ['Road Obstruction', 'Illegal Dumping', 'Broken Infrastructure', 'Noise Complaint', 'Missing Signage', 'Water Leak', 'Power Outage', 'Other'];
 
 export function EReportScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [incidentType, setIncidentType] = useState('');
   const [location, setLocation] = useState('');
   const [description, setDescription] = useState('');
@@ -29,7 +31,7 @@ export function EReportScreen() {
     setRefNumber(ref);
     // H-01: Fixed key from 'reports' to 'eReports' to match db seed
     const reports = db.get<unknown[]>('eReports') ?? [];
-    db.set('eReports', [...reports, { id: ref, incidentType, location, description, status: 'received' }]);
+    db.set('eReports', [...reports, { id: ref, userId: user?.id || null, incidentType, location, description, status: 'received' }]);
     setIsLoading(false);
     setDone(true);
   };

@@ -6,7 +6,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Bell } from 'lucide-react';
-import { db } from '../../mock/db';
+import { db, getUserNotifications } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 interface AppBarProps {
   title?: string;
@@ -28,7 +29,8 @@ export function AppBar({
   subtitle,
 }: AppBarProps) {
   const navigate = useNavigate();
-  const notifications = db.get<{ read: boolean }[]>('notifications') ?? [];
+  const { user } = useAuth();
+  const notifications = user ? getUserNotifications(user.id) : [];
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleBack = () => {
@@ -128,9 +130,9 @@ function EGovLogo() {
     <div className="flex items-center gap-1.5">
       {/* Stylized sun-and-rays motif — original SVG, not the real government seal */}
       <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <circle cx="15" cy="15" r="14" fill="#0038A8" />
-        <circle cx="15" cy="15" r="7" fill="#FCD116" />
-        <circle cx="15" cy="15" r="4" fill="#0038A8" />
+        <circle cx="15" cy="15" r="14" fill="var(--color-primary)" />
+        <circle cx="15" cy="15" r="7" fill="var(--color-accent)" />
+        <circle cx="15" cy="15" r="4" fill="var(--color-primary)" />
         {/* 8 rays */}
         {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => {
           const rad = (angle * Math.PI) / 180;
@@ -142,7 +144,7 @@ function EGovLogo() {
             <line
               key={i}
               x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke="#FCD116"
+              stroke="var(--color-accent)"
               strokeWidth="2"
               strokeLinecap="round"
             />

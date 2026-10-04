@@ -13,6 +13,7 @@
  */
 
 import { db, delay, ApiError } from '../db';
+import { generateSyntheticIdentity } from './verificationService';
 
 // ----------------------------------------------------------------
 // Types
@@ -55,6 +56,7 @@ export interface RegisterPayload {
   dateOfBirth: string;
   sex: 'M' | 'F';
   mpin: string;
+  challengeId: string;
 }
 
 /** Allowed fields for profile updates. Credentials and status cannot be changed via this DTO. */
@@ -139,7 +141,7 @@ export function validateMPIN(mpin: string): string | null {
 // ----------------------------------------------------------------
 
 /** Request an OTP for a mobile number. In demo mode, OTP is always 123456. */
-export async function requestOTP(rawMobile: string): Promise<{ sent: boolean; challengeId: string }> {
+export async function requestOTP(rawMobile: string, purpose: 'registration' | 'recovery' | 'update' = 'registration'): Promise<{ sent: boolean; challengeId: string }> {
   await delay(800 + Math.random() * 400);
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
@@ -149,7 +151,7 @@ export async function requestOTP(rawMobile: string): Promise<{ sent: boolean; ch
   const challenge = {
     id: challengeId,
     destination: canonical,
-    purpose: 'registration',
+    purpose,
     code: '123456', // Demo code — visible in ResearchTools
     issuedAt: Date.now(),
     expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
@@ -157,6 +159,10 @@ export async function requestOTP(rawMobile: string): Promise<{ sent: boolean; ch
     maxAttempts: 3,
     consumed: false,
   };
+  
+  // Invalidate any existing challenges for this destination and purpose (cleanup)
+  // Not strictly necessary since we use UUIDs, but good practice.
+  
   db.set(`otpChallenge:${challengeId}`, challenge);
 
   // In a real app, an SMS would be sent here.
@@ -204,6 +210,11 @@ export async function register(payload: RegisterPayload): Promise<User> {
   const canonical = normalizePHMobile(payload.mobileNumber);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean }>(`otpChallenge:${payload.challengeId}`);
+  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'registration' || !challenge.consumed) {
+    throw new ApiError('VERIFICATION_REQUIRED', 'Mobile number verification is missing or invalid.');
+  }
+
   const users = db.get<User[]>('users') ?? [];
 
   // Check for duplicate mobile number
@@ -244,6 +255,9 @@ export async function register(payload: RegisterPayload): Promise<User> {
   const updated = [...users, newUser];
   const ok = db.set('users', updated);
   if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to save account. Please try again.');
+
+  // Generate synthetic PhilSys record so the user can verify their account
+  generateSyntheticIdentity(newUser);
 
   return newUser;
 }
@@ -364,7 +378,8 @@ export function getUserById(userId: string): User | null {
 /** Reset MPIN after recovery (requires mock identity proof). */
 export async function resetMPIN(
   rawMobile: string,
-  newMpin: string
+  newMpin: string,
+  challengeId: string
 ): Promise<void> {
   await delay(700 + Math.random() * 400);
 
@@ -374,9 +389,19 @@ export async function resetMPIN(
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean }>(`otpChallenge:${challengeId}`);
+  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'recovery' || !challenge.consumed) {
+    throw new ApiError('VERIFICATION_REQUIRED', 'Recovery verification is missing or invalid.');
+  }
+
   const users = db.get<User[]>('users') ?? [];
   const idx = users.findIndex(u => u.mobileNumber === canonical);
   if (idx === -1) throw new ApiError('USER_NOT_FOUND', 'No account found.');
+
+  // Check if new mpin is the same as the old one (prevent reuse)
+  if (users[idx].mpinHash === mockHash(newMpin)) {
+    throw new ApiError('INVALID_MPIN', 'New MPIN cannot be the same as the current one.');
+  }
 
   users[idx] = { ...users[idx], mpinHash: mockHash(newMpin) };
   const ok = db.set('users', users);

@@ -21,8 +21,10 @@ const RESEND_COOLDOWN = 60;
 export function RegisterOTPScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const mobileNumber = (location.state as { mobileNumber: string })?.mobileNumber;
+  const mobileNumber = (location.state as { mobileNumber: string; challengeId: string })?.mobileNumber;
+  const initialChallengeId = (location.state as { mobileNumber: string; challengeId: string })?.challengeId;
 
+  const [challengeId, setChallengeId] = useState(initialChallengeId || '');
   const [otp, setOtp] = useState('');
   const [otpError, setOtpError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -60,12 +62,12 @@ export function RegisterOTPScreen() {
     setIsVerifying(true);
     setOtpError('');
     try {
-      const { valid } = await verifyOTP(mobileNumber, code);
+      const { valid } = await verifyOTP(challengeId, code);
       if (!valid) {
         setOtpError('Incorrect OTP. Please check the code and try again.');
         return;
       }
-      navigate('/register/mpin', { state: { mobileNumber } });
+      navigate('/register/mpin', { state: { mobileNumber, challengeId } });
     } catch {
       setOtpError('Verification failed. Please try again.');
     } finally {
@@ -87,7 +89,8 @@ export function RegisterOTPScreen() {
     if (resendCooldown > 0) return;
     setIsResending(true);
     try {
-      await requestOTP(mobileNumber);
+      const res = await requestOTP(mobileNumber, 'registration');
+      setChallengeId(res.challengeId);
       setCountdown(OTP_EXPIRY_SECONDS);
       setResendCooldown(RESEND_COOLDOWN);
       setOtp('');

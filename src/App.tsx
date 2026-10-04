@@ -202,9 +202,9 @@ function LoadingScreen() {
     <div className="flex-1 flex items-center justify-center bg-primary">
       <div className="flex flex-col items-center gap-4">
         <svg width="60" height="60" viewBox="0 0 30 30" fill="none" aria-label="eGovPH loading">
-          <circle cx="15" cy="15" r="14" fill="white" opacity="0.2" />
-          <circle cx="15" cy="15" r="7" fill="#FCD116" />
-          <circle cx="15" cy="15" r="4" fill="#0038A8" />
+          <circle cx="15" cy="15" r="14" fill="var(--color-surface)" opacity="0.2" />
+          <circle cx="15" cy="15" r="7" fill="var(--color-accent)" />
+          <circle cx="15" cy="15" r="4" fill="var(--color-primary)" />
         </svg>
         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
       </div>

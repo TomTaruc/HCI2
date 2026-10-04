@@ -38,8 +38,8 @@ export function RegisterMobileScreen() {
     setIsLoading(true);
     setApiError('');
     try {
-      await requestOTP(data.mobileNumber);
-      navigate('/register/otp', { state: { mobileNumber: data.mobileNumber } });
+      const { challengeId } = await requestOTP(data.mobileNumber, 'registration');
+      navigate('/register/otp', { state: { mobileNumber: data.mobileNumber, challengeId } });
     } catch {
       setApiError('Could not send OTP. Please try again.');
     } finally {

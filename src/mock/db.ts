@@ -95,7 +95,6 @@ function migrateIfNeeded(): void {
     try {
       const users = db.get<Record<string, unknown>[]>('users') ?? [];
       const migrated = users.map(u => {
-        // Normalize mobile number
         let mobile = u.mobileNumber as string;
         if (mobile && !mobile.startsWith('+')) {
           const digits = mobile.replace(/\D/g, '');
@@ -107,7 +106,6 @@ function migrateIfNeeded(): void {
             mobile = '+' + digits;
           }
         }
-        // Rename philSysNumber -> pcn
         const { philSysNumber, ...rest } = u as Record<string, unknown>;
         const pcn = philSysNumber || u.pcn || null;
         return { ...rest, mobileNumber: mobile, pcn };
@@ -116,6 +114,27 @@ function migrateIfNeeded(): void {
     } catch (e) {
       console.warn('[eGovPH db] Migration v1->v2 failed:', e);
     }
+  }
+
+  // Structural fix: arrays to keyed objects (runs regardless of schemaVersion if needed)
+  try {
+    const rawIds = localStorage.getItem(PREFIX + 'digitalIds');
+    if (rawIds && rawIds.startsWith('[')) {
+      const arr = JSON.parse(rawIds);
+      db.set('digitalIds', { 'user-verified-01': arr });
+    }
+  } catch (e) {
+    console.warn('[eGovPH db] Migration for digitalIds failed:', e);
+  }
+
+  try {
+    const rawNotifs = localStorage.getItem(PREFIX + 'notifications');
+    if (rawNotifs && rawNotifs.startsWith('[')) {
+      const arr = JSON.parse(rawNotifs);
+      db.set('notifications', { 'user-verified-01': arr });
+    }
+  } catch (e) {
+    console.warn('[eGovPH db] Migration for notifications failed:', e);
   }
 
   db.set('schemaVersion', SCHEMA_VERSION);
@@ -208,4 +227,62 @@ export function maybeThrow(chance = 0.05): void {
   if (Math.random() < chance) {
     throw new ApiError('NETWORK_ERROR', 'A simulated network error occurred. Please try again.');
   }
+}
+
+// ----------------------------------------------------------------
+// Typed Accessors for User Data
+// ----------------------------------------------------------------
+
+export interface AppNotification {
+  id: string;
+  title: string;
+  body: string;
+  timestamp: string;
+  read: boolean;
+  type: string;
+}
+
+export interface DigitalID {
+  type: string;
+  label: string;
+  agency: string;
+  available: boolean;
+  idNumber?: string | null;
+  issuedDate?: string | null;
+  expiresDate?: string | null;
+  holderName?: string | null;
+  qrPayload?: string | null;
+  description: string;
+  color: string;
+  notice?: string | null;
+}
+
+export function getUserDigitalIds(userId: string): DigitalID[] {
+  const data = db.get<Record<string, DigitalID[]> | DigitalID[]>('digitalIds') ?? {};
+  if (Array.isArray(data)) return data; 
+  return data[userId] || [];
+}
+
+export function getUserNotifications(userId: string): AppNotification[] {
+  const data = db.get<Record<string, AppNotification[]> | AppNotification[]>('notifications') ?? {};
+  if (Array.isArray(data)) return data; 
+  return data[userId] || [];
+}
+
+export function updateUserNotification(userId: string, notifId: string, updates: Partial<AppNotification>): void {
+  const data = db.get<Record<string, AppNotification[]>>('notifications') ?? {};
+  if (Array.isArray(data)) return;
+  const userNotifs = data[userId] || [];
+  const next = userNotifs.map(n => n.id === notifId ? { ...n, ...updates } : n);
+  data[userId] = next;
+  db.set('notifications', data);
+}
+
+export function markAllUserNotificationsRead(userId: string): void {
+  const data = db.get<Record<string, AppNotification[]>>('notifications') ?? {};
+  if (Array.isArray(data)) return;
+  const userNotifs = data[userId] || [];
+  const next = userNotifs.map(n => ({ ...n, read: true }));
+  data[userId] = next;
+  db.set('notifications', data);
 }

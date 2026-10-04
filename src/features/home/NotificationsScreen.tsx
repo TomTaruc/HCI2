@@ -7,35 +7,30 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { EmptyState } from '../../components/ui/Card';
-import { db } from '../../mock/db';
-
-interface Notification {
-  id: string;
-  title: string;
-  body: string;
-  timestamp: string;
-  read: boolean;
-  type: string;
-}
+import { getUserNotifications, updateUserNotification, markAllUserNotificationsRead } from '../../mock/db';
+import type { AppNotification } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 export function NotificationsScreen() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   useEffect(() => {
-    const data = db.get<Notification[]>('notifications') ?? [];
+    if (!user) return;
+    const data = getUserNotifications(user.id);
     setNotifications(data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-  }, []);
+  }, [user]);
 
   const markAllRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    db.set('notifications', updated);
-    setNotifications(updated);
+    if (!user) return;
+    markAllUserNotificationsRead(user.id);
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const markRead = (id: string) => {
-    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-    db.set('notifications', updated);
-    setNotifications(updated);
+    if (!user) return;
+    updateUserNotification(user.id, id, { read: true });
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

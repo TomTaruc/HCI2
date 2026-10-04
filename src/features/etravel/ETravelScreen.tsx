@@ -11,6 +11,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 type Stage = 'type' | 'personal' | 'travel' | 'health' | 'done';
 
@@ -32,6 +33,8 @@ export function ETravelScreen() {
   const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }));
   const setHealthAnswer = (idx: number, ans: 'Yes' | 'No') => setHealthAnswers(p => ({ ...p, [idx]: ans }));
 
+  const { user } = useAuth();
+
   const handleSubmit = async () => {
     setIsLoading(true);
     await new Promise(r => setTimeout(r, 1500));
@@ -40,7 +43,7 @@ export function ETravelScreen() {
     const declarations = db.get<unknown[]>('etravelDeclarations') ?? [];
     // H-07: Include health answers in payload
     const healthDeclaration = HEALTH_QUESTIONS.reduce((acc, q, i) => ({ ...acc, [q]: healthAnswers[i] ?? 'Not answered' }), {});
-    db.set('etravelDeclarations', [...declarations, { id: ref, travelType, ...form, healthDeclaration }]);
+    db.set('etravelDeclarations', [...declarations, { id: ref, userId: user?.id || null, travelType, ...form, healthDeclaration }]);
     setIsLoading(false);
     setStage('done');
   };

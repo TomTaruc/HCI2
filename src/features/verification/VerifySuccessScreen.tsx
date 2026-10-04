@@ -22,7 +22,7 @@ function ConfettiPiece({ delay, x, color }: { delay: number; x: number; color: s
   );
 }
 
-const CONFETTI_COLORS = ['#0038A8', '#CE1126', '#FCD116', '#16A34A', '#FFFFFF'];
+const CONFETTI_COLORS = ['var(--color-primary)', 'var(--color-secondary)', 'var(--color-accent)', 'var(--color-success)', 'var(--color-surface)'];
 
 function Confetti() {
   const pieces = Array.from({ length: 40 }, (_, i) => ({
@@ -43,7 +43,7 @@ function Confetti() {
 
 export function VerifySuccessScreen() {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const hasShownConfetti = useRef(false);
 
   useEffect(() => {
@@ -52,6 +52,16 @@ export function VerifySuccessScreen() {
     sessionStorage.removeItem('verify_personal');
     sessionStorage.removeItem('verify_pcn');
   }, []);
+
+  if (user && user.verificationStatus !== 'verified') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-white px-6 text-center">
+        <h1 className="text-h1 font-bold text-text-primary">Verification Pending</h1>
+        <p className="text-body text-text-secondary mt-2 mb-6">Your identity verification has not been completed yet.</p>
+        <Button variant="outline" onClick={() => navigate('/home', { replace: true })}>Go to Dashboard</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col bg-white overflow-hidden">

@@ -84,9 +84,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  function _clearSession() {
+    db.remove('currentUserId');
+    db.remove('sessionStatus');
+    db.remove('sessionLoginAt');
+    db.remove('sessionLastActive');
+  }
+
   const resetIdleTimer = useCallback(() => {
+    // Prevent stale operations: do not reset timer if already logged out
+    const currentUserId = db.get<string>('currentUserId');
+    if (!currentUserId) {
+      clearIdleTimer();
+      return;
+    }
+
+    const now = Date.now();
+    const loginAt = db.get<number>('sessionLoginAt');
+    
+    // Enforce absolute expiry throughout activity
+    if (loginAt && (now - loginAt > ABSOLUTE_TIMEOUT_MS)) {
+      clearIdleTimer();
+      setUserState(null);
+      setSessionStatus('idle');
+      _clearSession();
+      try {
+        sessionStorage.removeItem('verify_personal');
+        sessionStorage.removeItem('verify_pcn');
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
     clearIdleTimer();
-    lastActivityRef.current = Date.now();
+    lastActivityRef.current = now;
     db.set('sessionLastActive', lastActivityRef.current);
 
     idleTimerRef.current = setTimeout(() => {
@@ -193,13 +225,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ----------------------------------------------------------------
   // Helpers
   // ----------------------------------------------------------------
-
-  function _clearSession() {
-    db.remove('currentUserId');
-    db.remove('sessionStatus');
-    db.remove('sessionLoginAt');
-    db.remove('sessionLastActive');
-  }
 
   function _establishSession(loggedInUser: User) {
     const now = Date.now();

@@ -3,14 +3,14 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, CheckCircle, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { OTPInput, MPINInput } from '../../components/ui/Input';
-import { requestOTP, verifyOTP, resetMPIN } from '../../mock/services/authService';
+import { requestOTP, verifyOTP, resetMPIN, normalizePHMobile } from '../../mock/services/authService';
 import { db } from '../../mock/db';
 import type { User } from '../../mock/services/authService';
 
@@ -27,6 +27,7 @@ export function ForgotMPINScreen() {
   const [newMpin, setNewMpin] = useState('');
   const [confirmMpin, setConfirmMpin] = useState('');
   const [mpinStage, setMpinStage] = useState<'new' | 'confirm'>('new');
+  const [challengeId, setChallengeId] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [livenessStep, setLivenessStep] = useState(0);
@@ -35,21 +36,31 @@ export function ForgotMPINScreen() {
   // L-07: Auto-send OTP if we have a prefilled mobile number
   useEffect(() => {
     if (prefillMobile && stage === 'otp') {
-      requestOTP(prefillMobile).catch(() => setError('Could not send OTP. Try again.'));
+      requestOTP(prefillMobile, 'recovery')
+        .then(res => setChallengeId(res.challengeId))
+        .catch(() => setError('Could not send OTP. Try again.'));
     }
   }, [prefillMobile, stage]);
 
   const handleSendOTP = async () => {
-    if (!mobileNumber.match(/^9\d{9}$/)) { setError('Enter a valid 10-digit mobile number starting with 9.'); return; }
+    if (!mobileNumber.match(/^9\d{9}$/) && !mobileNumber.startsWith('+639')) { 
+      setError('Enter a valid mobile number.'); 
+      return; 
+    }
+    const canonical = normalizePHMobile(mobileNumber);
+    if (!canonical) { setError('Invalid mobile number.'); return; }
+    
     // L-02: Check if mobile number actually exists
     const users = db.get<User[]>('users') ?? [];
-    if (!users.find(u => u.mobileNumber === mobileNumber)) {
+    if (!users.find(u => u.mobileNumber === canonical)) {
       setError('No account found with this mobile number.');
       return;
     }
     setIsLoading(true);
     try {
-      await requestOTP(mobileNumber);
+      const res = await requestOTP(canonical, 'recovery');
+      setChallengeId(res.challengeId);
+      setMobileNumber(canonical); // keep normalized
       setStage('otp');
       setError('');
     } catch { setError('Could not send OTP. Try again.'); }
@@ -61,7 +72,7 @@ export function ForgotMPINScreen() {
     if (code.length !== 6) { setError('Enter all 6 digits.'); return; }
     setIsLoading(true);
     try {
-      const { valid } = await verifyOTP(mobileNumber, code);
+      const { valid } = await verifyOTP(challengeId, code);
       if (!valid) { setError('Incorrect OTP.'); setIsLoading(false); return; }
       setStage('liveness');
       setError('');
@@ -89,7 +100,7 @@ export function ForgotMPINScreen() {
       try {
         const users = db.get<User[]>('users') ?? [];
         const user = users.find(u => u.mobileNumber === mobileNumber);
-        if (user) await resetMPIN(mobileNumber, newMpin);
+        if (user) await resetMPIN(mobileNumber, newMpin, challengeId);
         setStage('done');
       } catch { setError('Failed to update MPIN. Try again.'); }
       finally { setIsLoading(false); }
@@ -130,7 +141,7 @@ export function ForgotMPINScreen() {
           {stage === 'liveness' && (
             <div className="flex flex-col items-center gap-6 py-8 text-center">
               <div className="w-40 h-40 rounded-full border-4 border-primary bg-primary-light flex items-center justify-center relative overflow-hidden">
-                <span className="text-6xl">👤</span>
+                <UserIcon size={64} className="text-primary" />
                 <div className="absolute inset-0 border-4 border-primary/30 rounded-full animate-ping" />
               </div>
               <div>
@@ -161,7 +172,7 @@ export function ForgotMPINScreen() {
           {stage === 'done' && (
             <div className="flex flex-col items-center gap-6 py-8 text-center">
               <div className="w-20 h-20 bg-success/10 rounded-full flex items-center justify-center">
-                <span className="text-4xl">✓</span>
+                <CheckCircle size={36} className="text-success" />
               </div>
               <h1 className="text-h1 font-bold text-text-primary">MPIN updated</h1>
               <p className="text-body text-text-secondary">Your new MPIN has been set. You can now log in.</p>

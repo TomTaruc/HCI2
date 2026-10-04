@@ -10,6 +10,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 const PAYMENT_ITEMS = [
   { id: 'sss-contrib', label: 'SSS Contribution', agency: 'SSS', amount: 1125.00 },
@@ -22,6 +23,7 @@ const PAYMENT_ITEMS = [
 
 export function EGovPayScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selected, setSelected] = useState<typeof PAYMENT_ITEMS[0] | null>(null);
   const [payMethod, setPayMethod] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +37,7 @@ export function EGovPayScreen() {
     setRefNumber(ref);
     // C-04: Fixed key from 'payments' to 'eGovPayPayments' to match db seed
     const payments = db.get<unknown[]>('eGovPayPayments') ?? [];
-    db.set('eGovPayPayments', [...payments, { id: ref, ...selected, method: payMethod, date: new Date().toISOString() }]);
+    db.set('eGovPayPayments', [...payments, { id: ref, userId: user?.id, ...selected, method: payMethod, date: new Date().toISOString() }]);
     setIsLoading(false);
     setDone(true);
   };

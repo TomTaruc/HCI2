@@ -10,7 +10,8 @@ import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { CardSkeleton } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
-import { db } from '../../mock/db';
+import { db, getUserDigitalIds } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 interface DigitalID {
   type: string;
@@ -29,20 +30,22 @@ interface DigitalID {
 export function IDDetailScreen() {
   const { idType } = useParams<{ idType: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [id, setId] = useState<DigitalID | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [downloadMsg, setDownloadMsg] = useState('');
 
   useEffect(() => {
     const load = async () => {
+      if (!user) return;
       await new Promise(r => setTimeout(r, 500));
-      const ids = db.get<DigitalID[]>('digitalIds') ?? [];
+      const ids = getUserDigitalIds(user.id);
       const found = ids.find(i => i.type === idType);
       setId(found ?? null);
       setIsLoading(false);
     };
     load();
-  }, [idType]);
+  }, [idType, user]);
 
   const handleDownload = () => {
     // Client-side "download" — shows a toast message (no real file generation needed for usability test)
@@ -54,6 +57,17 @@ export function IDDetailScreen() {
     if (!iso) return '—';
     return new Date(iso).toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
   };
+
+  if (!user || user.verificationStatus !== 'verified') {
+    return (
+      <div className="flex-1 flex flex-col">
+        <AppBar title="ID Details" showBack />
+        <ScreenContainer className="flex items-center justify-center">
+          <p className="text-body text-text-secondary text-center">Verification Required.<br/>Please verify your account to view IDs.</p>
+        </ScreenContainer>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

@@ -11,6 +11,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 type Stage = 'service' | 'schedule' | 'review' | 'done';
 
@@ -31,6 +32,7 @@ function getManilaDateString(date: Date = new Date()): string {
 
 export function AppointmentBookingScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const location = useLocation();
   const preselect = (location.state as { service?: string })?.service;
 
@@ -63,6 +65,7 @@ export function AppointmentBookingScreen() {
     const appointments = db.get<unknown[]>('appointments') ?? [];
     db.set('appointments', [...appointments, { 
       id: ref, 
+      userId: user?.id,
       serviceType: selectedService, 
       scheduledFor: `${selectedDate} ${selectedTime}`, 
       referenceNumber: ref, 

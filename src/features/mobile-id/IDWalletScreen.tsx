@@ -11,7 +11,7 @@ import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { CardSkeleton, ErrorState, Badge } from '../../components/ui/Card';
 import { useAuth } from '../../state/AuthContext';
-import { db } from '../../mock/db';
+import { db, getUserDigitalIds } from '../../mock/db';
 
 interface DigitalID {
   type: string;
@@ -41,8 +41,9 @@ export function IDWalletScreen() {
     const load = async () => {
       setIsLoading(true);
       try {
+        if (!user) return;
         await new Promise(r => setTimeout(r, 600));
-        const data = db.get<DigitalID[]>('digitalIds') ?? [];
+        const data = getUserDigitalIds(user.id);
         setIds(data);
       } catch {
         setError('Couldn\'t load your ID wallet. Try again.');
@@ -51,7 +52,7 @@ export function IDWalletScreen() {
       }
     };
     load();
-  }, [retryCount]);
+  }, [retryCount, user]);
 
   if (!isVerified) {
     return (

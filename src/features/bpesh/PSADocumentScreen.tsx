@@ -10,6 +10,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 type Stage = 'type' | 'details' | 'delivery' | 'review' | 'done';
 const DOC_TYPES = ['Birth Certificate', 'Marriage Certificate', 'Death Certificate'];
@@ -26,13 +27,15 @@ export function PSADocumentScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [refNumber, setRefNumber] = useState('');
 
+  const { user } = useAuth();
+
   const handleSubmit = async () => {
     setIsLoading(true);
     await new Promise(r => setTimeout(r, 1500));
     const ref = 'PSA-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
     const reqs = db.get<unknown[]>('psaRequests') ?? [];
-    db.set('psaRequests', [...reqs, { id: ref, docType, status: 'processing' }]);
+    db.set('psaRequests', [...reqs, { id: ref, userId: user?.id, docType, status: 'processing', fullName, dob, registrationPlace, delivery, address }]);
     setIsLoading(false);
     setStage('done');
   };

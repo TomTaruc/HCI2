@@ -10,11 +10,13 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 const AGENCIES = ['SSS', 'PhilHealth', 'Pag-IBIG', 'GSIS', 'BIR', 'DFA', 'LTO', 'NBI', 'PSA', 'DICT', 'Other'];
 
 export function ConsultationScreen() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [agency, setAgency] = useState('');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
@@ -29,7 +31,7 @@ export function ConsultationScreen() {
     const ref = 'CON-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
     const concerns = db.get<unknown[]>('concerns') ?? [];
-    db.set('concerns', [...concerns, { id: ref, agency, subject, message, status: 'pending' }]);
+    db.set('concerns', [...concerns, { id: ref, userId: user?.id, agency, subject, message, status: 'pending' }]);
     setIsLoading(false);
     setDone(true);
   };

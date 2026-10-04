@@ -8,7 +8,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, X, Eye, EyeOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { db } from '../../mock/db';
+import { db, getUserDigitalIds } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
 
 interface DigitalID {
   type: string;
@@ -26,7 +27,20 @@ export function IDQRShareScreen() {
   const navigate = useNavigate();
   const [consentGiven, setConsentGiven] = useState(false);
 
-  const ids = db.get<DigitalID[]>('digitalIds') ?? [];
+  const { user } = useAuth();
+
+  // Guard against unverified access
+  if (!user || user.verificationStatus !== 'verified') {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-black px-4 text-center">
+        <p className="text-white text-body font-semibold">Verification Required</p>
+        <p className="text-white/70 text-sm mt-2">Please verify your account to view this QR code.</p>
+        <button onClick={() => navigate('/home')} className="text-primary-light font-medium mt-4">Go to Home</button>
+      </div>
+    );
+  }
+
+  const ids = getUserDigitalIds(user.id);
   const id = ids.find(i => i.type === idType);
 
   if (!id) {
@@ -101,8 +115,8 @@ export function IDQRShareScreen() {
                   value={id.qrPayload ?? `EGOV-${id.type}-DEMO-NOT-REAL`}
                   size={220}
                   level="H"
-                  fgColor="#17203A"
-                  bgColor="#FFFFFF"
+                  fgColor="var(--color-text-primary)"
+                  bgColor="var(--color-surface)"
                 />
               </div>
 

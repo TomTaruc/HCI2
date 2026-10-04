@@ -7,6 +7,7 @@ import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { Button } from "../../components/ui/Button";
 import { Input, MPINInput } from "../../components/ui/Input";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { useAuth } from "../../state/AuthContext";
 import { useLang, type Locale } from "../../state/LangContext";
 import { useTheme, type ThemeMode } from "../../state/ThemeContext";
@@ -52,7 +53,9 @@ export function SettingsScreen() {
 
   // Email State
   const [newEmail, setNewEmail] = useState("");
-  const [emailStep, setEmailStep] = useState<"input" | "done">("input");
+  const [emailOtp, setEmailOtp] = useState("");
+  const [emailChallengeId, setEmailChallengeId] = useState("");
+  const [emailStep, setEmailStep] = useState<"input" | "otp" | "done">("input");
   const [emailError, setEmailError] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
 
@@ -71,9 +74,37 @@ export function SettingsScreen() {
     if (modal && modalRef.current) {
       // Focus first focusable element
       const focusable = modalRef.current.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-      if (focusable) focusable.focus();
+      if (focusable) {
+        setTimeout(() => focusable.focus(), 50); // slight delay to allow animation
+      }
     }
   }, [modal, mpinStep, emailStep, mobileStep]);
+
+  // Focus trap
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!modal || !modalRef.current) return;
+      if (e.key === 'Escape') {
+        closeModal();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const focusable = modalRef.current.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modal]);
 
   const openComingSoon = (feature: string) => {
     setComingSoonMsg(`${feature} is coming soon in a future update.`);
@@ -87,7 +118,7 @@ export function SettingsScreen() {
   };
 
   const openChangeEmail = () => {
-    setNewEmail(""); setEmailError(""); setEmailStep("input");
+    setNewEmail(""); setEmailOtp(""); setEmailChallengeId(""); setEmailError(""); setEmailStep("input");
     setModal("change-email");
   };
 
@@ -141,11 +172,31 @@ export function SettingsScreen() {
     }
     setEmailLoading(true); setEmailError("");
     try {
+      // Mock request OTP for email
+      // We'll just generate a mock challengeId directly since we don't have requestEmailOTP
+      await new Promise(r => setTimeout(r, 600));
+      setEmailChallengeId("mock-email-challenge");
+      setEmailStep("otp");
+    } catch (err: any) {
+      setEmailError(err.message || "Failed to request OTP.");
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const handleVerifyEmailOTP = async () => {
+    if (emailOtp.length < 6) { setEmailError("Enter the 6-digit OTP."); return; }
+    setEmailLoading(true); setEmailError("");
+    try {
+      // Mock verify OTP (accept 123456)
+      await new Promise(r => setTimeout(r, 600));
+      if (emailOtp !== '123456') throw new Error("Invalid OTP.");
+      
       await changeEmail(user!.id, newEmail);
       refreshUser();
       setEmailStep("done");
     } catch (err: any) {
-      setEmailError(err.message || "Failed to update email.");
+      setEmailError(err.message || "Invalid OTP.");
     } finally {
       setEmailLoading(false);
     }
@@ -257,10 +308,10 @@ export function SettingsScreen() {
       </ScreenContainer>
 
       {/* Main content inert when modal is open for a11y */}
-      <AnimatePresence>
-        {modal && (
+      {modal && createPortal(
+        <AnimatePresence>
           <div
-            className="absolute inset-0 z-50 flex items-end justify-center bg-black/40"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
             role="dialog"
             aria-modal="true"
             onClick={e => e.target === e.currentTarget && closeModal()}
@@ -323,7 +374,24 @@ export function SettingsScreen() {
                       error={emailError}
                       autoFocus
                     />
-                    <Button variant="primary" fullWidth size="lg" isLoading={emailLoading} onClick={handleUpdateEmail} disabled={!newEmail}>Update Email</Button>
+                    <div className="bg-primary-light rounded-lg px-4 py-3 mt-4">
+                      <p className="text-body-sm text-primary font-medium">We will send a one-time password (OTP) to this email to verify it.</p>
+                    </div>
+                    <Button variant="primary" fullWidth size="lg" isLoading={emailLoading} onClick={handleUpdateEmail} disabled={!newEmail} className="mt-4">Send OTP</Button>
+                  </>)}
+                  {emailStep === "otp" && (<>
+                    <p className="text-body text-text-secondary">Enter the 6-digit OTP sent to {newEmail}. (Demo: 123456)</p>
+                    <Input
+                      label="6-digit OTP"
+                      type="number"
+                      placeholder="123456"
+                      value={emailOtp}
+                      onChange={(e) => { setEmailOtp(e.target.value); setEmailError(""); }}
+                      error={emailError}
+                      maxLength={6}
+                      autoFocus
+                    />
+                    <Button variant="primary" fullWidth size="lg" isLoading={emailLoading} onClick={handleVerifyEmailOTP} disabled={emailOtp.length < 6} className="mt-4">Verify OTP</Button>
                   </>)}
                   {emailStep === "done" && (
                     <div className="flex flex-col items-center gap-4 py-4 text-center">
@@ -453,8 +521,9 @@ export function SettingsScreen() {
               )}
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

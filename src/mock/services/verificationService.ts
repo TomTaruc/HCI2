@@ -106,9 +106,42 @@ const MOCK_PHILSYS_RECORDS: Record<string, {
   },
 };
 
+export function getPhilSysRecords() {
+  const stored = db.get<Record<string, any>>('philSysRecords');
+  if (stored) return stored;
+  
+  // Seed if missing
+  db.set('philSysRecords', MOCK_PHILSYS_RECORDS);
+  return MOCK_PHILSYS_RECORDS;
+}
+
 // ----------------------------------------------------------------
 // Service functions
 // ----------------------------------------------------------------
+
+/**
+ * Generate a synthetic identity for a new account.
+ * This ensures new accounts have a valid PhilSys fixture to verify against.
+ */
+export function generateSyntheticIdentity(user: Pick<User, 'id' | 'fullName' | 'dateOfBirth' | 'sex' | 'nationality'>) {
+  const records = getPhilSysRecords();
+  
+  // Generate 16-digit PCN starting with 9999
+  const randomDigits = Math.floor(Math.random() * 1000000000000).toString().padStart(12, '0');
+  const pcnStr = `9999${randomDigits}`;
+  const pcn = normalizePCN(pcnStr)!;
+
+  records[pcn] = {
+    userId: user.id,
+    fullName: user.fullName,
+    dateOfBirth: user.dateOfBirth,
+    sex: user.sex,
+    nationality: user.nationality || 'Filipino',
+  };
+
+  db.set('philSysRecords', records);
+  return pcn;
+}
 
 /**
  * Validate personal info against the mock PhilSys record.
@@ -130,7 +163,8 @@ export async function validatePersonalInfo(
     );
   }
 
-  const record = MOCK_PHILSYS_RECORDS[pcn];
+  const records = getPhilSysRecords();
+  const record = records[pcn];
   if (!record) {
     throw new ApiError(
       'PCN_NOT_FOUND',
@@ -194,6 +228,20 @@ export async function submitVerification(payload: VerificationPayload): Promise<
   const normalizedPCN = normalizePCN(payload.pcn);
   if (!normalizedPCN) throw new ApiError('PCN_INVALID_FORMAT', 'Invalid PCN format.');
 
+  // Revalidate identity and PCN ownership
+  await validatePersonalInfo(payload.userId, normalizedPCN, {
+    fullName: payload.fullName,
+    dateOfBirth: payload.dateOfBirth,
+    sex: payload.sex,
+    nationality: payload.nationality,
+  });
+
+  const existingRequests = db.get<VerificationRequest[]>('verificationRequests') ?? [];
+  const existingPending = existingRequests.find(r => r.userId === payload.userId && r.status === 'pending');
+  if (existingPending) {
+    return { requestId: existingPending.id };
+  }
+
   // Create a verification request record
   const requestId = `vreq-${payload.userId}-${Date.now()}`;
   const request: VerificationRequest = {
@@ -205,7 +253,6 @@ export async function submitVerification(payload: VerificationPayload): Promise<
     updatedAt: new Date().toISOString(),
   };
 
-  const existingRequests = db.get<VerificationRequest[]>('verificationRequests') ?? [];
   db.set('verificationRequests', [...existingRequests, request]);
 
   // Update user status to pending
@@ -275,6 +322,29 @@ export async function approveVerification(userId: string): Promise<void> {
       : r
   );
   db.set('verificationRequests', updatedRequests);
+
+  // Generate Digital ID
+  const digitalIds = db.get<Record<string, any[]>>('digitalIds') ?? {};
+  if (Array.isArray(digitalIds)) return; // Should be object by now
+  const userIds = digitalIds[userId] || [];
+  
+  if (!userIds.find(d => d.type === 'national-id')) {
+    const newId = {
+      type: 'national-id',
+      label: 'National ID',
+      agency: 'Philippine Statistics Authority',
+      available: true,
+      idNumber: users[idx].pcn,
+      issuedDate: new Date().toISOString(),
+      expiresDate: null,
+      holderName: users[idx].fullName,
+      qrPayload: `PH-NAT-ID-${users[idx].pcn}`,
+      description: 'The official digital equivalent of the PhilSys ID.',
+      color: '#1A365D'
+    };
+    digitalIds[userId] = [...userIds, newId];
+    db.set('digitalIds', digitalIds);
+  }
 }
 
 /**
@@ -324,8 +394,9 @@ export async function instantVerify(userId: string): Promise<void> {
  */
 export function getDemoPCN(userId: string): string {
   // Each user has their own demo PCN that matches their PhilSys record
-  if (userId === 'user-unverified-01') return '0000-0000-0000-0001';
-  if (userId === 'user-verified-01') return '1234-5678-9012-3456';
-  // For newly registered accounts, no demo PCN exists
+  const records = getPhilSysRecords();
+  for (const [pcn, record] of Object.entries(records)) {
+    if (record.userId === userId) return pcn;
+  }
   return '';
 }
