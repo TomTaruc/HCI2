@@ -43,8 +43,14 @@ export function ETravelScreen() {
     const declarations = db.get<unknown[]>('etravelDeclarations') ?? [];
     // H-07: Include health answers in payload
     const healthDeclaration = HEALTH_QUESTIONS.reduce((acc, q, i) => ({ ...acc, [q]: healthAnswers[i] ?? 'Not answered' }), {});
-    db.set('etravelDeclarations', [...declarations, { id: ref, userId: user?.id || null, travelType, ...form, healthDeclaration }]);
+    const ok = db.set('etravelDeclarations', [...declarations, { id: ref, userId: user?.id || null, travelType, ...form, healthDeclaration }]);
     setIsLoading(false);
+    
+    if (!ok) {
+      alert('Failed to submit declaration. Please try again.');
+      return;
+    }
+    
     setStage('done');
   };
 

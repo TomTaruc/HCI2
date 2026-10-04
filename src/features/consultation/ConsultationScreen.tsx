@@ -31,8 +31,14 @@ export function ConsultationScreen() {
     const ref = 'CON-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
     const concerns = db.get<unknown[]>('concerns') ?? [];
-    db.set('concerns', [...concerns, { id: ref, userId: user?.id, agency, subject, message, status: 'pending' }]);
+    const ok = db.set('concerns', [...concerns, { id: ref, userId: user?.id, agency, subject, message, status: 'pending' }]);
     setIsLoading(false);
+    
+    if (!ok) {
+      alert('Failed to submit consultation. Please try again.');
+      return;
+    }
+    
     setDone(true);
   };
 

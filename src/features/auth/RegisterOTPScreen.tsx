@@ -73,7 +73,7 @@ export function RegisterOTPScreen() {
     } finally {
       setIsVerifying(false);
     }
-  }, [otp, mobileNumber, navigate]);
+  }, [otp, mobileNumber, navigate, challengeId, countdown]);
 
   // Auto-submit when 6 digits entered — H-05: also check countdown
   const handleOTPChange = (value: string) => {

@@ -2,12 +2,14 @@
  * ScanQRScreen — QR Scanner mock (no real camera scanning)
  */
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { AppBar } from '../../components/layout/AppBar';
 
 export function ScanQRScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as { returnTo?: string; returnParam?: string; title?: string } | null;
   const [scanResult, setScanResult] = useState<string | null>(null);
 
   useEffect(() => {
@@ -53,8 +55,19 @@ export function ScanQRScreen() {
             <p className="text-body text-text-primary mb-4 break-words font-mono bg-bg p-3 rounded-lg">
               {scanResult}
             </p>
-            <div className="flex gap-3 justify-center mt-6">
-              <button onClick={() => { setScanResult(null); window.location.reload(); }} className="px-6 py-2 border border-border rounded-lg text-text-secondary font-medium">
+            <div className="flex flex-col gap-3 justify-center mt-6">
+              {state?.returnTo ? (
+                <button 
+                  onClick={() => {
+                    const params = state.returnParam ? { [state.returnParam]: scanResult } : { scanResult };
+                    navigate(state.returnTo!, { state: params, replace: true });
+                  }} 
+                  className="px-6 py-3 bg-primary rounded-lg text-white font-medium w-full"
+                >
+                  Use Scanned Data
+                </button>
+              ) : null}
+              <button onClick={() => { setScanResult(null); window.location.reload(); }} className="px-6 py-3 border border-border rounded-lg text-text-secondary font-medium w-full">
                 Scan Another
               </button>
             </div>

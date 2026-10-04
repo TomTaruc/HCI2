@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -52,6 +52,12 @@ export function RegisterProfileScreen() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
   });
+
+  useEffect(() => {
+    if (!state?.mobileNumber || !state?.challengeId || !mpin) {
+      navigate('/register/mobile', { replace: true });
+    }
+  }, [state, mpin, navigate]);
 
   const onSubmit = async (data: FormValues) => {
     setIsLoading(true);

@@ -35,8 +35,14 @@ export function PSADocumentScreen() {
     const ref = 'PSA-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
     const reqs = db.get<unknown[]>('psaRequests') ?? [];
-    db.set('psaRequests', [...reqs, { id: ref, userId: user?.id, docType, status: 'processing', fullName, dob, registrationPlace, delivery, address }]);
+    const ok = db.set('psaRequests', [...reqs, { id: ref, userId: user?.id, docType, status: 'processing', fullName, dob, registrationPlace, delivery, address }]);
     setIsLoading(false);
+    
+    if (!ok) {
+      alert('Failed to submit request. Please try again.');
+      return;
+    }
+    
     setStage('done');
   };
 

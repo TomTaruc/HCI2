@@ -63,7 +63,7 @@ export function AppointmentBookingScreen() {
     const ref = generateRef();
     setRefNumber(ref);
     const appointments = db.get<unknown[]>('appointments') ?? [];
-    db.set('appointments', [...appointments, { 
+    const ok = db.set('appointments', [...appointments, { 
       id: ref, 
       userId: user?.id,
       serviceType: selectedService, 
@@ -72,6 +72,12 @@ export function AppointmentBookingScreen() {
       status: 'booked' 
     }]);
     setIsLoading(false);
+    
+    if (!ok) {
+      setError('Booking failed. Please try again.');
+      return;
+    }
+    
     setStage('done');
   };
 

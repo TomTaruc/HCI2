@@ -31,8 +31,14 @@ export function EReportScreen() {
     setRefNumber(ref);
     // H-01: Fixed key from 'reports' to 'eReports' to match db seed
     const reports = db.get<unknown[]>('eReports') ?? [];
-    db.set('eReports', [...reports, { id: ref, userId: user?.id || null, incidentType, location, description, status: 'received' }]);
+    const ok = db.set('eReports', [...reports, { id: ref, userId: user?.id || null, incidentType, location, description, status: 'received' }]);
     setIsLoading(false);
+    
+    if (!ok) {
+      alert('Failed to submit report. Please try again.');
+      return;
+    }
+    
     setDone(true);
   };
 

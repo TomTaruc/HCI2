@@ -137,7 +137,10 @@ function migrateIfNeeded(): void {
     console.warn('[eGovPH db] Migration for notifications failed:', e);
   }
 
-  db.set('schemaVersion', SCHEMA_VERSION);
+  const ok = db.set('schemaVersion', SCHEMA_VERSION);
+  if (!ok) {
+    console.warn('[eGovPH db] Failed to save schema version during migration.');
+  }
 }
 
 // ----------------------------------------------------------------
@@ -145,7 +148,11 @@ function migrateIfNeeded(): void {
 // ----------------------------------------------------------------
 
 export function seedDatabase(): void {
-  db.set('users', usersData);
+  const ok = db.set('users', usersData);
+  if (!ok) {
+    console.warn('[eGovPH db] Seeding failed due to storage limits or unavailability.');
+    return;
+  }
   db.set('agencies', agenciesData);
   db.set('contributions', contributionsData);
   db.set('digitalIds', digitalIdsData);
@@ -163,6 +170,7 @@ export function seedDatabase(): void {
   db.set('etravel', []);
   db.set('jobApplications', []);
   db.set('verificationRequests', []);
+  
   db.set('seeded', true);
   db.set('schemaVersion', SCHEMA_VERSION);
 

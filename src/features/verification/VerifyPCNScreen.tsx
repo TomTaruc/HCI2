@@ -19,6 +19,7 @@ import {
   formatPCNInput,
 } from '../../mock/services/verificationService';
 import { useAuth } from '../../state/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 export function VerifyPCNScreen() {
   const navigate = useNavigate();
@@ -42,6 +43,17 @@ export function VerifyPCNScreen() {
       navigate('/verify/personal-info', { replace: true });
     }
   }, [navigate]);
+
+  const location = useLocation();
+  const state = location.state as { scannedPCN?: string } | null;
+
+  useEffect(() => {
+    if (state?.scannedPCN) {
+      setPcn(formatPCNInput(state.scannedPCN));
+      // Optionally remove it from state so it doesn't re-apply on reload
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [state?.scannedPCN, navigate, location.pathname]);
 
   const handlePCNChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPCNInput(e.target.value);
@@ -186,19 +198,29 @@ export function VerifyPCNScreen() {
                 <p className="text-body-sm text-text-secondary font-medium">Loading sample details...</p>
               </motion.div>
             ) : (
-              <button
-                onClick={handleLoadSample}
-                className="flex items-center gap-3 border border-dashed border-primary rounded-lg p-4 text-primary hover:bg-primary-light transition-colors w-full"
-                aria-label="Load sample PCN for this demo account"
-              >
-                <ScanLine size={24} aria-hidden="true" />
-                <div className="text-left">
-                  <p className="text-body font-semibold">Load sample details</p>
-                  <p className="text-body-sm text-text-secondary">
-                    Auto-fill the PCN assigned to your demo account.
-                  </p>
-                </div>
-              </button>
+              <>
+                <button
+                  onClick={() => navigate('/scan', { state: { returnTo: '/verify/pcn', returnParam: 'scannedPCN' } })}
+                  className="flex items-center justify-center gap-2 border border-border rounded-lg p-4 text-text-primary hover:bg-surface transition-colors w-full"
+                  aria-label="Scan National ID QR Code"
+                >
+                  <ScanLine size={20} aria-hidden="true" />
+                  <span className="text-body font-semibold">Scan QR Code</span>
+                </button>
+
+                <button
+                  onClick={handleLoadSample}
+                  className="flex items-center gap-3 border border-dashed border-primary rounded-lg p-4 text-primary hover:bg-primary-light transition-colors w-full"
+                  aria-label="Load sample PCN for this demo account"
+                >
+                  <div className="text-left">
+                    <p className="text-body font-semibold">Load sample details</p>
+                    <p className="text-body-sm text-text-secondary">
+                      Auto-fill the PCN assigned to your demo account.
+                    </p>
+                  </div>
+                </button>
+              </>
             )}
           </AnimatePresence>
 

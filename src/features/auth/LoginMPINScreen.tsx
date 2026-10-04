@@ -38,6 +38,7 @@ export function LoginMPINScreen() {
   };
 
   const handleLogin = async () => {
+    if (isLoading) return;
     if (mpin.length < 6) { setMpinError('Please enter all 6 digits.'); return; }
     setIsLoading(true);
     setMpinError('');

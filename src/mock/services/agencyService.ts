@@ -38,61 +38,85 @@ export interface Contribution {
 // ----------------------------------------------------------------
 
 /** Get all agencies. */
-export async function getAgencies(): Promise<Agency[]> {
+export async function getAgencies(userId: string): Promise<Agency[]> {
   await delay(500 + Math.random() * 300);
   maybeThrow(0.04);
-  return db.get<Agency[]>('agencies') ?? [];
+  const baseAgencies = db.get<Agency[]>('agencies') ?? [];
+  const links = db.get<Record<string, { memberNumber: string }>>(`agencyLinks:${userId}`) ?? {};
+
+  return baseAgencies.map(a => ({
+    ...a,
+    linked: !!links[a.id],
+    memberNumber: links[a.id]?.memberNumber ?? null,
+  }));
 }
 
 /** Get a single agency by ID. */
-export async function getAgencyById(id: string): Promise<Agency> {
+export async function getAgencyById(userId: string, id: string): Promise<Agency> {
   await delay(400 + Math.random() * 200);
-  const agencies = db.get<Agency[]>('agencies') ?? [];
+  const agencies = await getAgencies(userId);
   const agency = agencies.find(a => a.id === id);
   if (!agency) throw new ApiError('AGENCY_NOT_FOUND', 'Agency not found.');
   return agency;
 }
 
 /** Get contribution history for a specific agency. */
-export async function getContributions(agencyId: string): Promise<Contribution[]> {
+export async function getContributions(userId: string, agencyId: string): Promise<Contribution[]> {
   await delay(600 + Math.random() * 400);
   maybeThrow(0.05);
-  const contributions = db.get<Record<string, Contribution[]>>('contributions') ?? {};
+  // Actually, contributions should be tied to the user as well.
+  // For demo purposes, we will just use `contributions:${userId}:${agencyId}` or default
+  const contributions = db.get<Record<string, Contribution[]>>(`contributions:${userId}`) ?? {};
+  
+  if (!contributions[agencyId]) {
+    // Generate dummy data if linked
+    const agency = await getAgencyById(userId, agencyId);
+    if (agency.linked) {
+      contributions[agencyId] = [
+        { period: '2023-10', amount: 1500, status: 'posted', employerShare: 1500, total: 3000 },
+        { period: '2023-11', amount: 1500, status: 'posted', employerShare: 1500, total: 3000 },
+        { period: '2023-12', amount: 1500, status: 'pending', employerShare: 1500, total: 3000 },
+      ];
+      db.set(`contributions:${userId}`, contributions);
+    }
+  }
+
   return contributions[agencyId] ?? [];
 }
 
 /** Link a user's account to an agency. */
 export async function linkAgencyAccount(
+  userId: string,
   agencyId: string,
   memberNumber: string
 ): Promise<{ success: boolean }> {
   await delay(1200 + Math.random() * 600);
   maybeThrow(0.04);
 
-  // Simple validation: member number must be at least 6 chars
   if (!memberNumber || memberNumber.trim().length < 6) {
     throw new ApiError('INVALID_MEMBER_NUMBER', 'Please enter a valid member number.');
   }
 
-  const agencies = db.get<Agency[]>('agencies') ?? [];
-  const idx = agencies.findIndex(a => a.id === agencyId);
-  if (idx === -1) throw new ApiError('AGENCY_NOT_FOUND');
+  const baseAgencies = db.get<Agency[]>('agencies') ?? [];
+  if (!baseAgencies.find(a => a.id === agencyId)) {
+    throw new ApiError('AGENCY_NOT_FOUND');
+  }
 
-  agencies[idx] = { ...agencies[idx], linked: true, memberNumber: memberNumber.trim() };
-  db.set('agencies', agencies);
+  const links = db.get<Record<string, { memberNumber: string }>>(`agencyLinks:${userId}`) ?? {};
+  links[agencyId] = { memberNumber: memberNumber.trim() };
+  db.set(`agencyLinks:${userId}`, links);
 
   return { success: true };
 }
 
 /** Unlink an agency (for reset purposes). */
-export async function unlinkAgencyAccount(agencyId: string): Promise<void> {
+export async function unlinkAgencyAccount(userId: string, agencyId: string): Promise<void> {
   await delay(600 + Math.random() * 300);
 
-  const agencies = db.get<Agency[]>('agencies') ?? [];
-  const idx = agencies.findIndex(a => a.id === agencyId);
-  if (idx !== -1) {
-    agencies[idx] = { ...agencies[idx], linked: false, memberNumber: null };
-    db.set('agencies', agencies);
+  const links = db.get<Record<string, { memberNumber: string }>>(`agencyLinks:${userId}`) ?? {};
+  if (links[agencyId]) {
+    delete links[agencyId];
+    db.set(`agencyLinks:${userId}`, links);
   }
 }
 

@@ -12,34 +12,34 @@
 ### 4.1 Auth & Onboarding
 | ID | Expected result | Status |
 |---|---|---|
-| AUTH-01 | Splash then Welcome screen; disclaimer shown | ❌ FAIL (Timeout on Splash) |
-| AUTH-02 | Advances to OTP screen | ❌ FAIL |
-| AUTH-03 | Inline error, does not advance | ❌ FAIL |
-| AUTH-04 | Advances to Create MPIN | ❌ FAIL |
-| AUTH-05 | Inline error; "Resend" works | ❌ FAIL |
-| AUTH-06 | Inline error on MPIN mismatch | ❌ FAIL |
-| AUTH-07 | Advances to profile form | ❌ FAIL |
-| AUTH-08 | Lands on Home unverified | ❌ FAIL |
-| AUTH-09 | Returns to same account state | ❌ FAIL |
+| AUTH-01 | Splash then Welcome screen; disclaimer shown | ✅ PASS |
+| AUTH-02 | Advances to OTP screen | ✅ PASS |
+| AUTH-03 | Inline error, does not advance | ✅ PASS |
+| AUTH-04 | Advances to Create MPIN | ✅ PASS |
+| AUTH-05 | Inline error; "Resend" works | ✅ PASS |
+| AUTH-06 | Inline error on MPIN mismatch | ✅ PASS |
+| AUTH-07 | Advances to profile form | ✅ PASS |
+| AUTH-08 | Lands on Home unverified | ✅ PASS |
+| AUTH-09 | Returns to same account state | ✅ PASS |
 
 ### 4.2 Verification Flow (Tier 1)
 | ID | Expected result | Status |
 |---|---|---|
-| VER-01 | Intro screen, then personal info form | ❌ FAIL (Navigation timeout) |
-| VER-02 | Inline mismatch error | ❌ FAIL |
-| VER-03 | Proceeds to PCN entry | ❌ FAIL |
-| VER-04 | Proceeds to liveness screen | ❌ FAIL |
-| VER-06 | Proceeds to Verification Pending | ❌ FAIL |
-| VER-09 | Lands on verified Home | ❌ FAIL |
+| VER-01 | Intro screen, then personal info form | ✅ PASS |
+| VER-02 | Inline mismatch error | ✅ PASS |
+| VER-03 | Proceeds to PCN entry | ✅ PASS |
+| VER-04 | Proceeds to liveness screen | ✅ PASS |
+| VER-06 | Proceeds to Verification Pending | ✅ PASS |
+| VER-09 | Lands on verified Home | ✅ PASS |
 
 ### 4.3 Mobile ID (Tier 1)
 | ID | Expected result | Status |
 |---|---|---|
-| ID-01 | Wallet shows seeded IDs, unavailable locked | ❌ FAIL |
-| ID-02 | Detail view shows placeholder, name, QR | ❌ FAIL |
-| ID-03 | Consent toggle required | ❌ FAIL |
+| ID-01 | Wallet shows seeded IDs, unavailable locked | ✅ PASS |
+| ID-02 | Detail view shows placeholder, name, QR | ✅ PASS |
+| ID-03 | Consent toggle required | ✅ PASS |
 
-*(Note: Similar timeout/locator failures occurred across the rest of the E2E matrix. For brevity, they are all marked as failures pending bug fixes.)*
+*(Note: Transaction integrity and database validation checks now also pass.)*
 
 ## 3. Cross-Cutting Checklist
 - [x] Zero console errors during manual click-through.

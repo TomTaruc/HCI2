@@ -29,16 +29,26 @@ export function EGovPayScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [refNumber, setRefNumber] = useState('');
+  const [error, setError] = useState('');
 
   const handlePay = async () => {
     setIsLoading(true);
+    setError('');
     await new Promise(r => setTimeout(r, 1500));
     const ref = 'PAY-' + Date.now().toString(36).toUpperCase();
-    setRefNumber(ref);
+    
     // C-04: Fixed key from 'payments' to 'eGovPayPayments' to match db seed
     const payments = db.get<unknown[]>('eGovPayPayments') ?? [];
-    db.set('eGovPayPayments', [...payments, { id: ref, userId: user?.id, ...selected, method: payMethod, date: new Date().toISOString() }]);
+    const newPayment = { id: ref, userId: user?.id, ...selected, method: payMethod, date: new Date().toISOString() };
+    const ok = db.set('eGovPayPayments', [...payments, newPayment]);
+    
     setIsLoading(false);
+    if (!ok) {
+      setError('Payment processing failed. Please try again.');
+      return;
+    }
+    
+    setRefNumber(ref);
     setDone(true);
   };
 
@@ -122,6 +132,11 @@ export function EGovPayScreen() {
                 ))}
               </div>
             </div>
+            {error && (
+              <div className="bg-error/10 border border-error rounded-lg p-3 text-error text-body-sm mb-2">
+                {error}
+              </div>
+            )}
             <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handlePay} disabled={!payMethod}>
               Pay ₱{selected.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
             </Button>

@@ -96,6 +96,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function VerifiedRoute({ children }: { children: React.ReactNode }) {
+  const { user, sessionStatus, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) return <LoadingScreen />;
+  if (!user) {
+    const from = location.pathname;
+    const safeDest = from.startsWith('/') ? from : '/home';
+    return <Navigate to="/welcome" state={{ from: safeDest }} replace />;
+  }
+  if (sessionStatus === 'locked') return <SessionLockedScreen />;
+  if (user.verificationStatus !== 'verified') {
+    // If not verified, redirect to /verify
+    return <Navigate to="/verify" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 // ----------------------------------------------------------------
 // App
 // ----------------------------------------------------------------
@@ -139,7 +158,7 @@ export function App() {
         <Route path="/home" element={<ProtectedRoute><HomeScreen /></ProtectedRoute>} />
         <Route path="/home/tourism" element={<ProtectedRoute><TourismScreen /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
-        <Route path="/search" element={<ProtectedRoute><SearchScreen /></ProtectedRoute>} />
+        <Route path="/search" element={<VerifiedRoute><SearchScreen /></VerifiedRoute>} />
         <Route path="/news" element={<ProtectedRoute><NewsScreen /></ProtectedRoute>} />
 
         {/* Verification — Flow A */}
@@ -151,28 +170,28 @@ export function App() {
         <Route path="/verify/success" element={<ProtectedRoute><VerifySuccessScreen /></ProtectedRoute>} />
 
         {/* Mobile ID — Flow B */}
-        <Route path="/mobile-id" element={<ProtectedRoute><IDWalletScreen /></ProtectedRoute>} />
-        <Route path="/mobile-id/:idType" element={<ProtectedRoute><IDDetailScreen /></ProtectedRoute>} />
-        <Route path="/id/qr/:idType" element={<ProtectedRoute><IDQRShareScreen /></ProtectedRoute>} />
+        <Route path="/mobile-id" element={<VerifiedRoute><IDWalletScreen /></VerifiedRoute>} />
+        <Route path="/mobile-id/:idType" element={<VerifiedRoute><IDDetailScreen /></VerifiedRoute>} />
+        <Route path="/id/qr/:idType" element={<VerifiedRoute><IDQRShareScreen /></VerifiedRoute>} />
 
         {/* NGAs / Agencies — Flow C */}
-        <Route path="/agencies" element={<ProtectedRoute><NGAsDirectoryScreen /></ProtectedRoute>} />
-        <Route path="/agencies/:agencyId" element={<ProtectedRoute><AgencyDetailScreen /></ProtectedRoute>} />
-        <Route path="/lgu" element={<ProtectedRoute><LGUScreen /></ProtectedRoute>} />
+        <Route path="/agencies" element={<VerifiedRoute><NGAsDirectoryScreen /></VerifiedRoute>} />
+        <Route path="/agencies/:agencyId" element={<VerifiedRoute><AgencyDetailScreen /></VerifiedRoute>} />
+        <Route path="/lgu" element={<VerifiedRoute><LGUScreen /></VerifiedRoute>} />
 
         {/* Services Hub */}
-        <Route path="/services" element={<ProtectedRoute><ServicesHubScreen /></ProtectedRoute>} />
-        <Route path="/bpesh" element={<ProtectedRoute><BPESHScreen /></ProtectedRoute>} />
-        <Route path="/bpesh/appointment" element={<ProtectedRoute><AppointmentBookingScreen /></ProtectedRoute>} />
-        <Route path="/bpesh/psa" element={<ProtectedRoute><PSADocumentScreen /></ProtectedRoute>} />
-        <Route path="/consultation" element={<ProtectedRoute><ConsultationScreen /></ProtectedRoute>} />
-        <Route path="/employment" element={<ProtectedRoute><EmploymentScreen /></ProtectedRoute>} />
-        <Route path="/ereport" element={<ProtectedRoute><EReportScreen /></ProtectedRoute>} />
-        <Route path="/egovpay" element={<ProtectedRoute><EGovPayScreen /></ProtectedRoute>} />
-        <Route path="/egov-ai" element={<ProtectedRoute><EGovAIScreen /></ProtectedRoute>} />
-        <Route path="/weather" element={<ProtectedRoute><WeatherScreen /></ProtectedRoute>} />
-        <Route path="/speedtest" element={<ProtectedRoute><SpeedTestScreen /></ProtectedRoute>} />
-        <Route path="/scan" element={<ProtectedRoute><ScanQRScreen /></ProtectedRoute>} />
+        <Route path="/services" element={<VerifiedRoute><ServicesHubScreen /></VerifiedRoute>} />
+        <Route path="/bpesh" element={<VerifiedRoute><BPESHScreen /></VerifiedRoute>} />
+        <Route path="/bpesh/appointment" element={<VerifiedRoute><AppointmentBookingScreen /></VerifiedRoute>} />
+        <Route path="/bpesh/psa" element={<VerifiedRoute><PSADocumentScreen /></VerifiedRoute>} />
+        <Route path="/consultation" element={<VerifiedRoute><ConsultationScreen /></VerifiedRoute>} />
+        <Route path="/employment" element={<VerifiedRoute><EmploymentScreen /></VerifiedRoute>} />
+        <Route path="/ereport" element={<VerifiedRoute><EReportScreen /></VerifiedRoute>} />
+        <Route path="/egovpay" element={<VerifiedRoute><EGovPayScreen /></VerifiedRoute>} />
+        <Route path="/egov-ai" element={<VerifiedRoute><EGovAIScreen /></VerifiedRoute>} />
+        <Route path="/weather" element={<VerifiedRoute><WeatherScreen /></VerifiedRoute>} />
+        <Route path="/speedtest" element={<VerifiedRoute><SpeedTestScreen /></VerifiedRoute>} />
+        <Route path="/scan" element={<VerifiedRoute><ScanQRScreen /></VerifiedRoute>} />
 
         {/* Account */}
         <Route path="/account" element={<ProtectedRoute><AccountScreen /></ProtectedRoute>} />

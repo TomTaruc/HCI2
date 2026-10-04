@@ -17,7 +17,8 @@ import {
   changeEmail,
   changeMobile,
   requestOTP,
-  verifyOTP
+  verifyOTP,
+  requestEmailOTP
 } from "../../mock/services/authService";
 import {
   Lock,
@@ -172,10 +173,8 @@ export function SettingsScreen() {
     }
     setEmailLoading(true); setEmailError("");
     try {
-      // Mock request OTP for email
-      // We'll just generate a mock challengeId directly since we don't have requestEmailOTP
-      await new Promise(r => setTimeout(r, 600));
-      setEmailChallengeId("mock-email-challenge");
+      const res = await requestEmailOTP(newEmail, 'update');
+      setEmailChallengeId(res.challengeId);
       setEmailStep("otp");
     } catch (err: any) {
       setEmailError(err.message || "Failed to request OTP.");
@@ -188,11 +187,8 @@ export function SettingsScreen() {
     if (emailOtp.length < 6) { setEmailError("Enter the 6-digit OTP."); return; }
     setEmailLoading(true); setEmailError("");
     try {
-      // Mock verify OTP (accept 123456)
-      await new Promise(r => setTimeout(r, 600));
-      if (emailOtp !== '123456') throw new Error("Invalid OTP.");
-      
-      await changeEmail(user!.id, newEmail);
+      await verifyOTP(emailChallengeId, emailOtp);
+      await changeEmail(user!.id, newEmail, emailChallengeId);
       refreshUser();
       setEmailStep("done");
     } catch (err: any) {
@@ -209,7 +205,7 @@ export function SettingsScreen() {
     }
     setMobileLoading(true); setMobileError("");
     try {
-      const res = await requestOTP(newMobile);
+      const res = await requestOTP(newMobile, 'update');
       setChallengeId(res.challengeId);
       setMobileStep("otp");
     } catch (err: any) {
@@ -224,7 +220,7 @@ export function SettingsScreen() {
     setMobileLoading(true); setMobileError("");
     try {
       await verifyOTP(challengeId, otp);
-      await changeMobile(user!.id, newMobile);
+      await changeMobile(user!.id, newMobile, challengeId);
       refreshUser();
       setMobileStep("done");
     } catch (err: any) {

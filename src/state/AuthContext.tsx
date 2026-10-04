@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ----------------------------------------------------------------
   // Idle timer management
   // ----------------------------------------------------------------
+  const sessionGenRef = useRef<number>(0);
 
   const clearIdleTimer = useCallback(() => {
     if (idleTimerRef.current) {
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   function _clearSession() {
+    sessionGenRef.current += 1;
     db.remove('currentUserId');
     db.remove('sessionStatus');
     db.remove('sessionLoginAt');
@@ -228,14 +230,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   function _establishSession(loggedInUser: User) {
     const now = Date.now();
-    setUserState(loggedInUser);
-    setSessionStatus('unlocked');
-    db.set('currentUserId', loggedInUser.id);
+    
+    // Check if persistence works
+    const ok = db.set('currentUserId', loggedInUser.id);
+    if (!ok) {
+      console.error('[eGovPH] Session establishment failed (storage unavailable)');
+      return false;
+    }
     db.set('sessionStatus', 'unlocked');
     db.set('sessionLoginAt', now);
     db.set('sessionLastActive', now);
+
+    setUserState(loggedInUser);
+    setSessionStatus('unlocked');
     lastActivityRef.current = now;
     resetIdleTimer();
+    return true;
   }
 
   // ----------------------------------------------------------------
@@ -243,8 +253,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ----------------------------------------------------------------
 
   const login = useCallback(async (mobileNumber: string, mpin: string) => {
+    const gen = sessionGenRef.current;
     const loggedInUser = await loginService(mobileNumber, mpin);
-    _establishSession(loggedInUser);
+    if (sessionGenRef.current !== gen) return; // Cancelled by logout or switch
+    
+    if (!_establishSession(loggedInUser)) {
+      throw new Error('Failed to save session. Storage may be unavailable.');
+    }
   }, [resetIdleTimer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const logout = useCallback(() => {
@@ -267,7 +282,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    * protected routes are accessible immediately after signup.
    */
   const setUserAfterSignup = useCallback((u: User) => {
-    _establishSession(u);
+    if (!_establishSession(u)) {
+      console.error('Failed to establish session after signup.');
+    }
   }, [resetIdleTimer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshUser = useCallback(() => {

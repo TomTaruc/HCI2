@@ -11,9 +11,10 @@ import { Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
-import { Button } from '../../components/ui/Button';
 import { MPINInput } from '../../components/ui/Input';
+import { Button } from '../../components/ui/Button';
 import { StepIndicator } from './RegisterMobileScreen';
+import { validateMPIN } from '../../mock/services/authService';
 
 export function RegisterMPINScreen() {
   const navigate = useNavigate();
@@ -31,10 +32,11 @@ export function RegisterMPINScreen() {
   }, [mobileNumber, navigate]);
 
   const handleCreate = () => {
-    if (mpin.length < 6) { setError('Please enter all 6 digits.'); return; }
-    // Basic MPIN validation — no all-same digits, no sequential
-    const allSame = mpin.split('').every(d => d === mpin[0]);
-    if (allSame) { setError('Please choose a stronger MPIN. Avoid repeating digits.'); return; }
+    const validationError = validateMPIN(mpin);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setError('');
     setStage('confirm');
   };
@@ -56,6 +58,7 @@ export function RegisterMPINScreen() {
       setConfirmMpin('');
       setError('');
     } else {
+      sessionStorage.removeItem('reg_mpin');
       navigate(-1);
     }
   };

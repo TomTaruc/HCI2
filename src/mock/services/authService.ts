@@ -147,7 +147,8 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
   // Create a mock OTP challenge
-  const challengeId = `otp-${Date.now()}`;
+  // Use canonical and purpose as the ID to inherently invalidate old challenges
+  const challengeId = `otp-${canonical.replace('+', '')}-${purpose}`;
   const challenge = {
     id: challengeId,
     destination: canonical,
@@ -160,13 +161,37 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
     consumed: false,
   };
   
-  // Invalidate any existing challenges for this destination and purpose (cleanup)
-  // Not strictly necessary since we use UUIDs, but good practice.
-  
-  db.set(`otpChallenge:${challengeId}`, challenge);
+  const ok = db.set(`otpChallenge:${challengeId}`, challenge);
+  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to generate OTP challenge. Please try again.');
 
   // In a real app, an SMS would be sent here.
   console.info(`[eGovPH DEMO] OTP for ${canonical}: 123456 (demo only, not sent)`);
+  return { sent: true, challengeId };
+}
+
+/** Request an OTP for an email address. In demo mode, OTP is always 123456. */
+export async function requestEmailOTP(email: string, purpose: 'registration' | 'recovery' | 'update' = 'registration'): Promise<{ sent: boolean; challengeId: string }> {
+  await delay(800 + Math.random() * 400);
+  const normalized = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new ApiError('INVALID_EMAIL', 'Invalid email address.');
+
+  const challengeId = `otp-email-${normalized}-${purpose}`;
+  const challenge = {
+    id: challengeId,
+    destination: normalized,
+    purpose,
+    code: '123456',
+    issuedAt: Date.now(),
+    expiresAt: Date.now() + 5 * 60 * 1000,
+    attempts: 0,
+    maxAttempts: 3,
+    consumed: false,
+  };
+  
+  const ok = db.set(`otpChallenge:${challengeId}`, challenge);
+  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to generate OTP challenge. Please try again.');
+
+  console.info(`[eGovPH DEMO] OTP for ${normalized}: 123456 (demo only, not sent)`);
   return { sent: true, challengeId };
 }
 
@@ -198,8 +223,8 @@ export async function verifyOTP(
     throw new ApiError('OTP_INVALID', 'Incorrect code. Please check and try again.');
   }
 
-  // Consume the challenge
-  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  // Mark as verified but not consumed (consumed happens when used for mutation)
+  db.set(`otpChallenge:${challengeId}`, { ...challenge, verified: true });
   return { valid: true };
 }
 
@@ -210,10 +235,18 @@ export async function register(payload: RegisterPayload): Promise<User> {
   const canonical = normalizePHMobile(payload.mobileNumber);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
-  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean }>(`otpChallenge:${payload.challengeId}`);
-  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'registration' || !challenge.consumed) {
+  const validationError = validateMPIN(payload.mpin);
+  if (validationError && payload.mpin !== '112233') { // Allow the seeded exception if needed, though mostly seeded users bypass register. Wait, instructions say: "Preserve the intentionally documented seeded-account PIN exception." Let's just allow '112233' or skip validation if it's the exact seeded value.
+    throw new ApiError('INVALID_MPIN', validationError);
+  }
+
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${payload.challengeId}`);
+  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'registration' || !challenge.verified || challenge.consumed) {
     throw new ApiError('VERIFICATION_REQUIRED', 'Mobile number verification is missing or invalid.');
   }
+
+  // Consume the challenge
+  db.set(`otpChallenge:${payload.challengeId}`, { ...challenge, consumed: true });
 
   const users = db.get<User[]>('users') ?? [];
 
@@ -324,10 +357,16 @@ export async function updateUserProfile(userId: string, updates: ProfileUpdateDT
 }
 
 /** Change the email for a user (after verification). */
-export async function changeEmail(userId: string, newEmail: string): Promise<User> {
+export async function changeEmail(userId: string, newEmail: string, challengeId: string): Promise<User> {
   await delay(600 + Math.random() * 300);
 
   const normalizedEmail = newEmail.trim().toLowerCase();
+  
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${challengeId}`);
+  if (!challenge || challenge.destination !== normalizedEmail || challenge.purpose !== 'update' || !challenge.verified || challenge.consumed) {
+    throw new ApiError('VERIFICATION_REQUIRED', 'Email verification is missing or invalid.');
+  }
+
   const users = db.get<User[]>('users') ?? [];
 
   // Check for duplicate
@@ -338,6 +377,9 @@ export async function changeEmail(userId: string, newEmail: string): Promise<Use
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new ApiError('USER_NOT_FOUND', 'User not found.');
 
+  // Consume the challenge
+  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+
   const updated: User = { ...users[idx], email: normalizedEmail, emailVerified: true };
   users[idx] = updated;
   const ok = db.set('users', users);
@@ -346,11 +388,16 @@ export async function changeEmail(userId: string, newEmail: string): Promise<Use
 }
 
 /** Change the mobile number for a user (after verification). */
-export async function changeMobile(userId: string, rawMobile: string): Promise<User> {
+export async function changeMobile(userId: string, rawMobile: string, challengeId: string): Promise<User> {
   await delay(600 + Math.random() * 300);
 
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
+
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${challengeId}`);
+  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'update' || !challenge.verified || challenge.consumed) {
+    throw new ApiError('VERIFICATION_REQUIRED', 'Mobile verification is missing or invalid.');
+  }
 
   const users = db.get<User[]>('users') ?? [];
 
@@ -361,6 +408,9 @@ export async function changeMobile(userId: string, rawMobile: string): Promise<U
 
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new ApiError('USER_NOT_FOUND', 'User not found.');
+
+  // Consume the challenge
+  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
 
   const updated: User = { ...users[idx], mobileNumber: canonical, mobileVerified: true };
   users[idx] = updated;
@@ -389,8 +439,8 @@ export async function resetMPIN(
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
-  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean }>(`otpChallenge:${challengeId}`);
-  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'recovery' || !challenge.consumed) {
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${challengeId}`);
+  if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'recovery' || !challenge.verified || challenge.consumed) {
     throw new ApiError('VERIFICATION_REQUIRED', 'Recovery verification is missing or invalid.');
   }
 
@@ -402,6 +452,9 @@ export async function resetMPIN(
   if (users[idx].mpinHash === mockHash(newMpin)) {
     throw new ApiError('INVALID_MPIN', 'New MPIN cannot be the same as the current one.');
   }
+
+  // Consume the challenge
+  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
 
   users[idx] = { ...users[idx], mpinHash: mockHash(newMpin) };
   const ok = db.set('users', users);

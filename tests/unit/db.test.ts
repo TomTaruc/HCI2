@@ -12,7 +12,7 @@ describe('LocalStorage DB Wrapper', () => {
     const users = db.get<any[]>('users');
     expect(users).toBeDefined();
     expect(users?.length).toBeGreaterThan(0);
-    expect(users![0].mobileNumber).toBe('09171234567');
+    expect(users![0].mobileNumber).toBe('+639171234567');
   });
 
   it('can set and get values', () => {

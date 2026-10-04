@@ -30,7 +30,7 @@ export function NGAsDirectoryScreen() {
     setIsLoading(true);
     setError('');
     try {
-      const data = await getAgencies();
+      const data = await getAgencies(user!.id);
       setAgencies(data);
     } catch {
       setError("Couldn't load agencies. Try again.");

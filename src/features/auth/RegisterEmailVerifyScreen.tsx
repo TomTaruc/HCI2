@@ -8,10 +8,14 @@ import { Mail, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
+import { useAuth } from '../../state/AuthContext';
+import { db } from '../../mock/db';
+import type { User } from '../../mock/services/authService';
 import { Button } from '../../components/ui/Button';
 
 export function RegisterEmailVerifyScreen() {
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
   const location = useLocation();
   const email = (location.state as { email: string })?.email ?? 'your email';
   const [resendSent, setResendSent] = useState(false); // L-01: State for resend button
@@ -49,7 +53,18 @@ export function RegisterEmailVerifyScreen() {
               fullWidth
               size="lg"
               leftIcon={<CheckCircle size={18} />}
-              onClick={() => navigate('/home', { replace: true })}
+              onClick={async () => {
+                if (user) {
+                  const users = db.get<User[]>('users') ?? [];
+                  const idx = users.findIndex(u => u.id === user.id);
+                  if (idx !== -1) {
+                    users[idx].emailVerified = true;
+                    db.set('users', users);
+                    await refreshUser();
+                  }
+                }
+                navigate('/home', { replace: true });
+              }}
             >
               I've verified my email
             </Button>

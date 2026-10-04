@@ -13,6 +13,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card, CardSkeleton, EmptyState, ErrorState, Badge } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
+import { useAuth } from '../../state/AuthContext';
 import { getAgencyById, getContributions, linkAgencyAccount } from '../../mock/services/agencyService';
 import type { Agency, Contribution } from '../../mock/services/agencyService';
 import { db } from '../../mock/db';
@@ -22,6 +23,7 @@ type Tab = 'overview' | 'records' | 'support';
 export function AgencyDetailScreen() {
   const { agencyId } = useParams<{ agencyId: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [agency, setAgency] = useState<Agency | null>(null);
   const [contributions, setContributions] = useState<Contribution[]>([]);
@@ -40,7 +42,7 @@ export function AgencyDetailScreen() {
     setIsLoading(true);
     setError('');
     try {
-      const data = await getAgencyById(agencyId);
+      const data = await getAgencyById(user!.id, agencyId);
       setAgency(data);
       if (data.linked) loadRecords();
     } catch (err: unknown) {
@@ -55,7 +57,7 @@ export function AgencyDetailScreen() {
     setRecordsLoading(true);
     setRecordsError('');
     try {
-      const data = await getContributions(agencyId);
+      const data = await getContributions(user!.id, agencyId);
       setContributions(data);
     } catch {
       setRecordsError("Couldn't load your records. Try again.");
@@ -71,10 +73,10 @@ export function AgencyDetailScreen() {
     setIsLinking(true);
     setLinkError('');
     try {
-      await linkAgencyAccount(agencyId, memberInput);
+      await linkAgencyAccount(user!.id, agencyId, memberInput);
       setLinkSuccess(true);
       // Reload agency data
-      const updated = await getAgencyById(agencyId);
+      const updated = await getAgencyById(user!.id, agencyId);
       setAgency(updated);
       loadRecords();
     } catch (err: unknown) {
