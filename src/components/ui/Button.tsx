@@ -69,7 +69,7 @@ export function Button({
         className,
       ].join(' ')}
       disabled={disabled || isLoading}
-      {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
+      {...(props as any)}
     >
       {isLoading ? (
         <>

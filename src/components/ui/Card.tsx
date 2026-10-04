@@ -27,6 +27,7 @@ export function Card({
   ...props
 }: CardProps) {
   return (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     <Tag
       className={[
         'bg-white rounded-lg border border-border shadow-card',
@@ -36,7 +37,7 @@ export function Card({
           : '',
         className,
       ].join(' ')}
-      {...(props as React.HTMLAttributes<HTMLDivElement>)}
+      {...(props as any)}
     >
       {children}
     </Tag>
