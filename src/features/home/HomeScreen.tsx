@@ -6,10 +6,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
+import {
   Search, Lock, ChevronRight, MapPin, Sun, Wifi, MessageCircle, 
   Building2, Map, Briefcase, Plane, Globe2, HeartPulse, FileWarning, 
-  Smartphone, Rocket, CreditCard, Palmtree, Waves, Wind 
+  Smartphone, Rocket, CreditCard, Palmtree, Waves, Wind, AlertTriangle, CheckCircle 
 } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
@@ -108,12 +108,12 @@ export function HomeScreen() {
                   onClick={() => navigate('/verify')}
                   className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-secondary bg-secondary/10 px-2 py-0.5 rounded-full hover:bg-secondary/20 transition-colors"
                 >
-                  ⚠ Verify account to unlock all services
+                  <AlertTriangle size={12} /> Verify account to unlock all services
                 </button>
               )}
               {isVerified && (
-                <span className="mt-1 badge-verified text-xs">
-                  ✓ Verified
+                <span className="mt-1 badge-verified text-xs inline-flex items-center gap-1">
+                  <CheckCircle size={12} /> Verified
                 </span>
               )}
             </div>

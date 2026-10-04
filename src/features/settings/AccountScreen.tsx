@@ -3,7 +3,7 @@
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, User, Settings, Info, FlaskConical, LogOut, ShieldCheck } from 'lucide-react';
+import { ChevronRight, User, Settings, Info, FlaskConical, LogOut, ShieldCheck, CheckCircle, AlertTriangle } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Badge } from '../../components/ui/Card';
@@ -16,7 +16,7 @@ export function AccountScreen() {
 
   const menuItems = [
     { icon: User, label: 'View Profile', sub: 'Personal info, contact details', path: '/account/profile' },
-    { icon: ShieldCheck, label: 'Account Verification', sub: isVerified ? 'Verified account' : 'Verify to unlock all services', path: isVerified ? '/verify/success' : '/verify', badge: isVerified ? '✓ Verified' : 'Action needed' },
+    { icon: ShieldCheck, label: 'Account Verification', sub: isVerified ? 'Verified account' : 'Verify to unlock all services', path: isVerified ? '/verify/success' : '/verify', badge: isVerified ? 'Verified' : 'Action needed' },
     { icon: Settings, label: 'Settings', sub: 'Security, language, notifications', path: '/account/settings' },
     { icon: Info, label: 'About eGovPH', sub: 'Disclaimer, version, credits', path: '/account/about' },
     { icon: FlaskConical, label: 'Research Tools', sub: 'Seed data, toggle states, research controls', path: '/account/research-tools' },
@@ -37,8 +37,8 @@ export function AccountScreen() {
             <p className="text-white/70 text-body-sm truncate">{user?.mobileNumber}</p>
             <div className="mt-1">
               {isVerified
-                ? <Badge variant="success" className="text-xs">✓ Verified</Badge>
-                : <Badge variant="warning" className="text-xs">⚠ Unverified</Badge>}
+                ? <Badge variant="success" className="text-xs flex items-center gap-1"><CheckCircle size={12} /> Verified</Badge>
+                : <Badge variant="warning" className="text-xs flex items-center gap-1"><AlertTriangle size={12} /> Unverified</Badge>}
             </div>
           </div>
         </div>
@@ -54,7 +54,10 @@ export function AccountScreen() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="text-body font-semibold text-text-primary">{item.label}</p>
-                  {item.badge && <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isVerified && item.badge?.startsWith('✓') ? 'bg-success/10 text-success' : 'bg-secondary/10 text-secondary'}`}>{item.badge}</span>}
+                  {item.badge && <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${isVerified && item.badge === 'Verified' ? 'bg-success/10 text-success' : 'bg-secondary/10 text-secondary'}`}>
+                    {isVerified && item.badge === 'Verified' ? <CheckCircle size={12} /> : null}
+                    {item.badge}
+                  </span>}
                 </div>
                 <p className="text-body-sm text-text-secondary">{item.sub}</p>
               </div>

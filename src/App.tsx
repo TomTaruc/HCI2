@@ -1,15 +1,17 @@
 /**
  * App.tsx — Root routing for eGovPH HCI Prototype
- * 
+ *
+ * Uses HashRouter (configured in main.tsx) for GitHub Pages compatibility.
  * Routes are organized by auth state:
  * - Public routes (no auth required): splash, welcome, register, etravel
  * - Protected routes (auth required): home, mobile-id, agencies, account
- * 
+ *
  * Session-locked state shows the MPIN re-entry screen inline.
+ * Unknown routes show a 404 page with navigation options.
  */
 
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from './state/AuthContext';
 import { BottomNav } from './components/layout/BottomNav';
 import { db } from './mock/db';
@@ -80,9 +82,15 @@ import { SessionLockedScreen } from './features/auth/SessionLockedScreen';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, sessionStatus, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) return <LoadingScreen />;
-  if (!user) return <Navigate to="/welcome" replace />;
+  if (!user) {
+    // Remember intended destination (avoid open redirect: only internal paths)
+    const from = location.pathname;
+    const safeDest = from.startsWith('/') ? from : '/home';
+    return <Navigate to="/welcome" state={{ from: safeDest }} replace />;
+  }
   if (sessionStatus === 'locked') return <SessionLockedScreen />;
 
   return <>{children}</>;
@@ -175,7 +183,9 @@ export function App() {
 
         {/* Default redirect */}
         <Route path="/" element={<Navigate to={user ? '/home' : '/splash'} replace />} />
-        <Route path="*" element={<Navigate to={user ? '/home' : '/splash'} replace />} />
+
+        {/* 404 — useful error page instead of silent redirect */}
+        <Route path="*" element={<NotFoundScreen />} />
       </Routes>
 
       <BottomNav />
@@ -198,6 +208,35 @@ function LoadingScreen() {
         </svg>
         <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
       </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------
+// 404 Not Found Screen
+// ----------------------------------------------------------------
+
+function NotFoundScreen() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6 gap-6 text-center bg-bg">
+      <div className="w-20 h-20 bg-primary-light rounded-full flex items-center justify-center">
+        <span className="text-primary font-bold text-3xl">404</span>
+      </div>
+      <div>
+        <h1 className="text-h1 font-bold text-text-primary">Page not found</h1>
+        <p className="text-body text-text-secondary mt-2">
+          The page you are looking for does not exist or has been moved.
+        </p>
+      </div>
+      <button
+        onClick={() => navigate(user ? '/home' : '/welcome', { replace: true })}
+        className="h-12 px-8 bg-primary text-white rounded-md font-semibold hover:bg-primary-dark transition-colors"
+      >
+        {user ? 'Go to Home' : 'Go to Welcome'}
+      </button>
     </div>
   );
 }

@@ -105,7 +105,7 @@ export function IDWalletScreen() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white font-bold text-body truncate">{user?.fullName}</p>
-            <p className="text-white/70 text-body-sm">PhilSys: {user?.philSysNumber}</p>
+            <p className="text-white/70 text-body-sm">PhilSys: {user?.pcn || 'N/A'}</p>
           </div>
           <Badge variant="success" className="text-xs">Verified</Badge>
         </div>

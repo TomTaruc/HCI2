@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Palmtree, Waves, Mountain, Sunrise, Castle, Wind, Landmark, Map } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { db } from '../../mock/db';
@@ -22,6 +22,36 @@ interface Destination {
   highlights: string[];
 }
 
+function getIconForEmoji(emoji: string, className = "text-white") {
+  const size = 32;
+  switch (emoji) {
+    case '🏝️': return <Palmtree size={size} className={className} />;
+    case '🌊': return <Waves size={size} className={className} />;
+    case '⛰️': return <Mountain size={size} className={className} />;
+    case '🌄': return <Sunrise size={size} className={className} />;
+    case '🏄': return <Waves size={size} className={className} />; // Fallback for surfing
+    case '🏰': return <Castle size={size} className={className} />;
+    case '🌬️': return <Wind size={size} className={className} />;
+    case '🏛️': return <Landmark size={size} className={className} />;
+    default: return <Map size={size} className={className} />;
+  }
+}
+
+function getLargeIconForEmoji(emoji: string, className = "text-white") {
+  const size = 64;
+  switch (emoji) {
+    case '🏝️': return <Palmtree size={size} className={className} />;
+    case '🌊': return <Waves size={size} className={className} />;
+    case '⛰️': return <Mountain size={size} className={className} />;
+    case '🌄': return <Sunrise size={size} className={className} />;
+    case '🏄': return <Waves size={size} className={className} />; // Fallback for surfing
+    case '🏰': return <Castle size={size} className={className} />;
+    case '🌬️': return <Wind size={size} className={className} />;
+    case '🏛️': return <Landmark size={size} className={className} />;
+    default: return <Map size={size} className={className} />;
+  }
+}
+
 export function TourismScreen() {
   const destinations = db.get<Destination[]>('tourism') ?? [];
   const [selected, setSelected] = useState<Destination | null>(null);
@@ -34,7 +64,7 @@ export function TourismScreen() {
     <div className="flex-1 flex flex-col">
       <AppBar title="Tourism" showBack />
       <div className="bp-stripe" aria-hidden="true" />
-      <ScreenContainer noPadding className="gap-0">
+      <ScreenContainer noPadding className="gap-0 pb-12">
         {/* Category filter */}
         <div className="px-4 py-3 bg-white border-b border-border">
           <div className="flex gap-2 overflow-x-auto hide-scrollbar">
@@ -59,8 +89,8 @@ export function TourismScreen() {
               className="rounded-lg overflow-hidden border border-border text-left hover:shadow-card-hover transition-all active:scale-[0.98]"
               style={{ backgroundColor: dest.imageColor }}
             >
-              <div className="h-20 flex items-center justify-center text-4xl" aria-hidden="true">
-                {dest.imageEmoji}
+              <div className="h-20 flex items-center justify-center" aria-hidden="true">
+                {getIconForEmoji(dest.imageEmoji, "text-white opacity-90")}
               </div>
               <div className="bg-white p-3">
                 <p className="text-body font-bold text-text-primary leading-tight">{dest.name}</p>
@@ -82,8 +112,8 @@ export function TourismScreen() {
               animate={{ y: 0, opacity: 1 }}
               className="bg-white rounded-t-2xl w-full p-6 pb-8 max-h-[80vh] overflow-y-auto"
             >
-              <div className="h-32 rounded-xl flex items-center justify-center text-6xl mb-4" style={{ backgroundColor: selected.imageColor }}>
-                {selected.imageEmoji}
+              <div className="h-32 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: selected.imageColor }}>
+                {getLargeIconForEmoji(selected.imageEmoji, "text-white opacity-90")}
               </div>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div>

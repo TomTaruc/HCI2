@@ -41,7 +41,7 @@ type FormValues = z.infer<typeof schema>;
 export function RegisterProfileScreen() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setUser } = useAuth();
+  const { setUserAfterSignup } = useAuth();
   const state = (location.state as { mobileNumber: string });
   // C-02: Read MPIN from sessionStorage (was plain nav state — security fix)
   const mpin = sessionStorage.getItem('reg_mpin') ?? '';
@@ -70,7 +70,7 @@ export function RegisterProfileScreen() {
       });
       // C-02: Clear the temporary MPIN from sessionStorage
       sessionStorage.removeItem('reg_mpin');
-      setUser(newUser);
+      setUserAfterSignup(newUser);
       navigate('/register/email-verify', { state: { email: data.email } });
     } catch (err: unknown) {
       if (err instanceof Error) setApiError(err.message);

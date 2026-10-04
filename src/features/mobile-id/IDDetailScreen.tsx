@@ -5,7 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Download, QrCode } from 'lucide-react';
+import { Download, QrCode, User } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { CardSkeleton } from '../../components/ui/Card';
@@ -112,7 +112,7 @@ export function IDDetailScreen() {
           <div className="px-5 pb-4 flex items-center gap-4">
             {/* Placeholder avatar */}
             <div className="w-16 h-20 bg-white/20 rounded-lg flex items-center justify-center border border-white/30 shrink-0">
-              <span className="text-3xl">👤</span>
+              <User size={32} className="text-white" aria-hidden="true" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-bold text-body leading-tight">{id.holderName}</p>

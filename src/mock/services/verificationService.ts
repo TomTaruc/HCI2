@@ -1,9 +1,16 @@
 /**
  * Mock Verification Service — eGovPH HCI Prototype
- * 
+ *
  * Handles Flow A: Account Verification (Part 2 of registration).
  * Validates personal info against the "PhilSys record" fixture,
- * processes the PCN, and manages verification status transitions.
+ * processes the 16-digit PCN, and manages verification status transitions.
+ *
+ * ACADEMIC PROTOTYPE — No real PhilSys API is called.
+ * A browser match against local fixtures does NOT authenticate a real National ID.
+ * This service demonstrates the verification flow only.
+ *
+ * Public PCN format: XXXX-XXXX-XXXX-XXXX (16 digits, 4 groups of 4)
+ * Private PSN (12 digits) is NEVER requested or stored by this prototype.
  */
 
 import { db, delay, ApiError } from '../db';
@@ -20,24 +27,78 @@ export interface VerificationPayload {
   sex: 'M' | 'F';
   address: string;
   nationality: string;
-  philSysNumber: string;
+  /** 16-digit PCN, formatted as XXXX-XXXX-XXXX-XXXX */
+  pcn: string;
+}
+
+export interface VerificationRequest {
+  id: string;
+  userId: string;
+  status: 'pending' | 'approved' | 'rejected' | 'needs_correction';
+  payload: VerificationPayload;
+  submittedAt: string;
+  updatedAt: string;
+  rejectionReason?: string;
 }
 
 // ----------------------------------------------------------------
-// Mock PhilSys record to validate against (fixture)
-// This simulates the PSA/PhilSys database check.
-// In a real implementation, this would be an encrypted API call.
+// Format/validate PCN
 // ----------------------------------------------------------------
 
-const MOCK_PHILSYS_RECORDS: Record<string, { fullName: string; dateOfBirth: string; sex: 'M' | 'F'; nationality: string }> = {
-  '1234-5678-9012': {
+/**
+ * Normalizes a PCN input to XXXX-XXXX-XXXX-XXXX format.
+ * Strips non-digits and formats in groups of 4 separated by dashes.
+ * Returns null if the result is not exactly 16 digits.
+ */
+export function normalizePCN(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length !== 16) return null;
+  return [
+    digits.slice(0, 4),
+    digits.slice(4, 8),
+    digits.slice(8, 12),
+    digits.slice(12, 16),
+  ].join('-');
+}
+
+/**
+ * Formats a PCN input for display as the user types.
+ * Auto-inserts dashes at positions 4, 8, 12.
+ */
+export function formatPCNInput(raw: string): string {
+  const digits = raw.replace(/\D/g, '').slice(0, 16);
+  const parts = [
+    digits.slice(0, 4),
+    digits.slice(4, 8),
+    digits.slice(8, 12),
+    digits.slice(12, 16),
+  ].filter(Boolean);
+  return parts.join('-');
+}
+
+// ----------------------------------------------------------------
+// Mock PhilSys records — keyed by normalized 16-digit PCN
+// Each record matches a seeded user account.
+// ----------------------------------------------------------------
+
+const MOCK_PHILSYS_RECORDS: Record<string, {
+  userId: string;
+  fullName: string;
+  dateOfBirth: string;
+  sex: 'M' | 'F';
+  nationality: string;
+}> = {
+  // Verified user account (user-verified-01): Maria Lourdes Reyes Santos
+  '1234-5678-9012-3456': {
+    userId: 'user-verified-01',
     fullName: 'Maria Lourdes Reyes Santos',
     dateOfBirth: '1990-07-22',
     sex: 'F',
     nationality: 'Filipino',
   },
-  // Demo PCN always used by the "Scan ID" mock button
-  '0000-0000-0001': {
+  // Unverified user account (user-unverified-01): Juan Santos dela Cruz
+  '0000-0000-0000-0001': {
+    userId: 'user-unverified-01',
     fullName: 'Juan Santos dela Cruz',
     dateOfBirth: '1995-03-15',
     sex: 'M',
@@ -51,31 +112,62 @@ const MOCK_PHILSYS_RECORDS: Record<string, { fullName: string; dateOfBirth: stri
 
 /**
  * Validate personal info against the mock PhilSys record.
- * Returns the matched record or throws if no match.
+ * The PCN must be 16 digits, exist in our records, belong to the
+ * requesting user's account, and the name/DOB/sex must match exactly.
  */
 export async function validatePersonalInfo(
-  philSysNumber: string,
+  userId: string,
+  pcnInput: string,
   payload: { fullName: string; dateOfBirth: string; sex: 'M' | 'F'; nationality: string }
 ): Promise<{ valid: boolean }> {
   await delay(1200 + Math.random() * 600);
 
-  const record = MOCK_PHILSYS_RECORDS[philSysNumber];
-  if (!record) {
+  const pcn = normalizePCN(pcnInput);
+  if (!pcn) {
     throw new ApiError(
-      'PCN_NOT_FOUND',
-      "This PhilSys Card Number was not found in our records. Please check the number and try again."
+      'PCN_INVALID_FORMAT',
+      'The PCN must be exactly 16 digits in XXXX-XXXX-XXXX-XXXX format.'
     );
   }
 
-  // Lenient name match (case-insensitive, ignore extra spaces)
-  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-  const nameMatch = normalize(record.fullName).includes(normalize(payload.fullName)) ||
-    normalize(payload.fullName).includes(normalize(record.fullName));
+  const record = MOCK_PHILSYS_RECORDS[pcn];
+  if (!record) {
+    throw new ApiError(
+      'PCN_NOT_FOUND',
+      'This PhilSys Card Number was not found in our records. Please check the number and try again.'
+    );
+  }
 
-  if (!nameMatch || record.dateOfBirth !== payload.dateOfBirth || record.sex !== payload.sex) {
+  // Ownership check: the PCN must belong to the current user's synthetic account
+  if (record.userId !== userId) {
+    throw new ApiError(
+      'PCN_OWNERSHIP',
+      'This PhilSys Card Number does not match your account. Please use the PCN assigned to your demo account.'
+    );
+  }
+
+  // Exact normalized name match (case-insensitive, normalize whitespace)
+  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+  const nameMatch = normalize(record.fullName) === normalize(payload.fullName);
+
+  if (!nameMatch) {
     throw new ApiError(
       'RECORD_MISMATCH',
-      "This doesn't match our records. Check your spelling and try again. Make sure your details exactly match your National ID."
+      'The name you entered does not match the PhilSys record. Check your spelling and try again. Your name must exactly match your National ID.'
+    );
+  }
+
+  if (record.dateOfBirth !== payload.dateOfBirth) {
+    throw new ApiError(
+      'RECORD_MISMATCH',
+      'The date of birth you entered does not match the PhilSys record.'
+    );
+  }
+
+  if (record.sex !== payload.sex) {
+    throw new ApiError(
+      'RECORD_MISMATCH',
+      'The sex you selected does not match the PhilSys record.'
     );
   }
 
@@ -84,30 +176,59 @@ export async function validatePersonalInfo(
 
 /**
  * Submit a verification request. Transitions the user to "pending" status.
- * The actual approval is simulated via a timer (Section 7.1 spec).
+ * Requires that the user does not already have an active request.
  */
-export async function submitVerification(payload: VerificationPayload): Promise<void> {
+export async function submitVerification(payload: VerificationPayload): Promise<{ requestId: string }> {
   await delay(1500 + Math.random() * 500);
 
   const users = db.get<User[]>('users') ?? [];
-  const idx = users.findIndex(u => u.id === payload.userId);
-  if (idx === -1) throw new ApiError('USER_NOT_FOUND');
+  const userIdx = users.findIndex(u => u.id === payload.userId);
+  if (userIdx === -1) throw new ApiError('USER_NOT_FOUND', 'User not found.');
 
-  users[idx] = {
-    ...users[idx],
+  const user = users[userIdx];
+  if (user.verificationStatus === 'verified') {
+    throw new ApiError('ALREADY_VERIFIED', 'Your account is already verified.');
+  }
+
+  // Validate PCN format
+  const normalizedPCN = normalizePCN(payload.pcn);
+  if (!normalizedPCN) throw new ApiError('PCN_INVALID_FORMAT', 'Invalid PCN format.');
+
+  // Create a verification request record
+  const requestId = `vreq-${payload.userId}-${Date.now()}`;
+  const request: VerificationRequest = {
+    id: requestId,
+    userId: payload.userId,
+    status: 'pending',
+    payload: { ...payload, pcn: normalizedPCN },
+    submittedAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const existingRequests = db.get<VerificationRequest[]>('verificationRequests') ?? [];
+  db.set('verificationRequests', [...existingRequests, request]);
+
+  // Update user status to pending
+  users[userIdx] = {
+    ...users[userIdx],
     verificationStatus: 'pending',
-    philSysNumber: payload.philSysNumber,
+    pcn: normalizedPCN,
     address: payload.address,
     nationality: payload.nationality,
   };
-  db.set('users', users);
+  const ok = db.set('users', users);
+  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to submit verification. Please try again.');
+
+  return { requestId };
 }
 
 /**
  * Poll verification status. Called periodically from VerifyPendingScreen.
- * Returns the current status. If instant-verify is ON, resolves immediately.
+ * Only returns meaningful status for the request's owner.
  */
-export async function getVerificationStatus(userId: string): Promise<'unverified' | 'pending' | 'verified'> {
+export async function getVerificationStatus(
+  userId: string
+): Promise<'unverified' | 'pending' | 'verified'> {
   await delay(400 + Math.random() * 200);
 
   const users = db.get<User[]>('users') ?? [];
@@ -116,47 +237,95 @@ export async function getVerificationStatus(userId: string): Promise<'unverified
 }
 
 /**
- * Instant verification (Research Tools toggle).
- * Immediately transitions user to verified status.
- */
-export async function instantVerify(userId: string): Promise<void> {
-  await delay(300);
-
-  const users = db.get<User[]>('users') ?? [];
-  const idx = users.findIndex(u => u.id === userId);
-  if (idx === -1) throw new ApiError('USER_NOT_FOUND');
-
-  users[idx] = {
-    ...users[idx],
-    verificationStatus: 'verified',
-    verifiedAt: new Date().toISOString(),
-  };
-  db.set('users', users);
-}
-
-/**
- * Natural verification approval (called after the pending timer expires).
+ * Approve verification — only transitions if the user has an owned pending request.
+ * Requires a pending verificationRequest owned by this userId.
  */
 export async function approveVerification(userId: string): Promise<void> {
   await delay(200);
+
+  // Check that an owned pending request exists
+  const requests = db.get<VerificationRequest[]>('verificationRequests') ?? [];
+  const ownedPending = requests.find(
+    r => r.userId === userId && r.status === 'pending'
+  );
+  if (!ownedPending) {
+    // Nothing to approve — do not grant verified status
+    console.warn('[eGovPH] approveVerification: no owned pending request for', userId);
+    return;
+  }
 
   const users = db.get<User[]>('users') ?? [];
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) return;
 
+  // Must currently be in pending state
+  if (users[idx].verificationStatus !== 'pending') return;
+
   users[idx] = {
     ...users[idx],
     verificationStatus: 'verified',
     verifiedAt: new Date().toISOString(),
   };
   db.set('users', users);
+
+  // Update the request record
+  const updatedRequests = requests.map(r =>
+    r.id === ownedPending.id
+      ? { ...r, status: 'approved' as const, updatedAt: new Date().toISOString() }
+      : r
+  );
+  db.set('verificationRequests', updatedRequests);
 }
 
-/** Get the demo PCN used by the "Scan ID" mock button. */
+/**
+ * Instant verification (Research Tools toggle).
+ * Immediately transitions user to verified status.
+ * Requires an owned pending request (same policy as natural approval).
+ */
+export async function instantVerify(userId: string): Promise<void> {
+  await delay(300);
+  // Creates a synthetic pending request if one doesn't exist (for research convenience)
+  const requests = db.get<VerificationRequest[]>('verificationRequests') ?? [];
+  const existing = requests.find(r => r.userId === userId && r.status === 'pending');
+  if (!existing) {
+    // For research tools: synthesize a pending request so policy passes
+    const syntheticRequest: VerificationRequest = {
+      id: `vreq-research-${userId}-${Date.now()}`,
+      userId,
+      status: 'pending',
+      payload: {
+        userId,
+        fullName: 'Research Tool Override',
+        dateOfBirth: '1990-01-01',
+        sex: 'M',
+        address: 'Research Tools',
+        nationality: 'Filipino',
+        pcn: '0000-0000-0000-0000',
+      },
+      submittedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    db.set('verificationRequests', [...requests, syntheticRequest]);
+
+    // Also update user to pending first
+    const users = db.get<User[]>('users') ?? [];
+    const idx = users.findIndex(u => u.id === userId);
+    if (idx !== -1 && users[idx].verificationStatus === 'unverified') {
+      users[idx] = { ...users[idx], verificationStatus: 'pending' };
+      db.set('users', users);
+    }
+  }
+  await approveVerification(userId);
+}
+
+/**
+ * Get the demo PCN for the current user's account.
+ * Used by the "Load sample details" button to show the correct PCN hint.
+ */
 export function getDemoPCN(userId: string): string {
-  const users = db.get<User[]>('users') ?? [];
-  const user = users.find(u => u.id === userId);
-  // Return a user-specific demo PCN or the generic one
-  if (user?.mobileNumber === '09189876543') return '1234-5678-9012';
-  return '0000-0000-0001';
+  // Each user has their own demo PCN that matches their PhilSys record
+  if (userId === 'user-unverified-01') return '0000-0000-0000-0001';
+  if (userId === 'user-verified-01') return '1234-5678-9012-3456';
+  // For newly registered accounts, no demo PCN exists
+  return '';
 }

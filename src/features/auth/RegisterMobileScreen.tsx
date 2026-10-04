@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Phone } from 'lucide-react';
+import { Phone, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
@@ -91,9 +91,10 @@ export function RegisterMobileScreen() {
               </p>
             )}
 
-            <div className="bg-primary-light rounded-lg px-4 py-3">
+            <div className="bg-primary-light rounded-lg px-4 py-3 flex gap-3 items-start">
+              <Info size={20} className="text-primary shrink-0 mt-0.5" aria-hidden="true" />
               <p className="text-body-sm text-primary font-medium">
-                📱 Make sure your number is active and can receive SMS. The OTP expires in 5 minutes.
+                Make sure your number is active and can receive SMS. The OTP expires in 5 minutes.
               </p>
             </div>
 

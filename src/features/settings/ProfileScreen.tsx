@@ -34,7 +34,7 @@ export function ProfileScreen() {
         <div className="bg-white border border-border rounded-lg divide-y divide-border">
           {[
             { label: 'Full Name', value: user?.fullName },
-            { label: 'PhilSys Number', value: user?.philSysNumber || 'Not provided' },
+            { label: 'PhilSys Number', value: user?.pcn || 'Not provided' },
             { label: 'Mobile Number', value: user?.mobileNumber },
             { label: 'Email', value: user?.email || 'Not provided' },
             { label: 'LGU Code', value: user?.lguCode || 'QC' },

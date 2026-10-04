@@ -10,7 +10,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { OTPInput, MPINInput } from '../../components/ui/Input';
-import { requestOTP, verifyOTP, updateMPIN } from '../../mock/services/authService';
+import { requestOTP, verifyOTP, resetMPIN } from '../../mock/services/authService';
 import { db } from '../../mock/db';
 import type { User } from '../../mock/services/authService';
 
@@ -89,7 +89,7 @@ export function ForgotMPINScreen() {
       try {
         const users = db.get<User[]>('users') ?? [];
         const user = users.find(u => u.mobileNumber === mobileNumber);
-        if (user) await updateMPIN(user.id, newMpin);
+        if (user) await resetMPIN(mobileNumber, newMpin);
         setStage('done');
       } catch { setError('Failed to update MPIN. Try again.'); }
       finally { setIsLoading(false); }

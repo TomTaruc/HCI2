@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Fingerprint } from 'lucide-react';
+import { Fingerprint, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Input } from '../../components/ui/Input';
 import { MPINInput } from '../../components/ui/Input';
@@ -98,8 +98,8 @@ export function LoginMPINScreen() {
             <div className="flex flex-col gap-4">
               {/* Demo hint */}
               <div className="bg-accent/20 border border-accent rounded-lg px-4 py-3">
-                <p className="text-body-sm text-text-primary font-semibold">
-                  🔬 Seeded accounts:
+                <p className="text-body-sm text-text-primary font-semibold flex items-center gap-2">
+                  <Info size={16} className="text-primary" /> Seeded accounts:
                 </p>
                 <p className="text-body-sm text-text-secondary">
                   <strong>Unverified:</strong> 9171234567 · MPIN: 111111

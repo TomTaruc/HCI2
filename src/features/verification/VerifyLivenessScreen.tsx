@@ -7,17 +7,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, User, ScanLine, Eye, RotateCw, AlertTriangle } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { submitVerification } from '../../mock/services/verificationService';
 import { useAuth } from '../../state/AuthContext';
 
 const LIVENESS_PROMPTS = [
-  { text: 'Position your face in the frame', icon: '👤', duration: 1500 },
-  { text: 'Hold still…', icon: '🔍', duration: 1500 },
-  { text: 'Blink now…', icon: '👁', duration: 1200 },
-  { text: 'Turn slightly to the right…', icon: '↩️', duration: 1500 },
-  { text: 'Verifying your identity…', icon: '✓', duration: 1500 },
+  { text: 'Position your face in the frame', icon: <User size={40} className="text-white" />, duration: 1500 },
+  { text: 'Hold still…', icon: <ScanLine size={40} className="text-white" />, duration: 1500 },
+  { text: 'Blink now…', icon: <Eye size={40} className="text-white" />, duration: 1200 },
+  { text: 'Turn slightly to the right…', icon: <RotateCw size={40} className="text-white" />, duration: 1500 },
+  { text: 'Verifying your identity…', icon: <CheckCircle size={40} className="text-success" />, duration: 1500 },
 ];
 
 export function VerifyLivenessScreen() {
@@ -29,10 +29,12 @@ export function VerifyLivenessScreen() {
   const [submitError, setSubmitError] = useState('');
   const [canRetry, setCanRetry] = useState(false);
 
-  const personalData = JSON.parse(sessionStorage.getItem('verify_personal') ?? '{}');
+  const personalData = (() => {
+    try { return JSON.parse(sessionStorage.getItem('verify_personal') ?? '{}'); } catch { return {}; }
+  })();
   const pcn = sessionStorage.getItem('verify_pcn') ?? '';
 
-  // H-03: Guard — redirect to flow start if required data is missing
+  // Guard — redirect to flow start if required data is missing
   useEffect(() => {
     if (!sessionStorage.getItem('verify_personal') || !sessionStorage.getItem('verify_pcn')) {
       navigate('/verify/pcn', { replace: true });
@@ -56,12 +58,11 @@ export function VerifyLivenessScreen() {
                 sex: personalData.sex,
                 address: personalData.address,
                 nationality: personalData.nationality,
-                philSysNumber: pcn,
+                pcn: pcn,
               });
               refreshUser();
               setIsDone(true);
             } catch (err: unknown) {
-              // C-03: Show error and allow retry
               setSubmitError(err instanceof Error ? err.message : 'Verification submission failed. Please try again.');
               setCanRetry(true);
             } finally {
@@ -111,7 +112,7 @@ export function VerifyLivenessScreen() {
               aria-label="Position your face here"
             >
               {/* Placeholder avatar */}
-              <span className="text-8xl" aria-hidden="true">👤</span>
+              <User size={80} className="text-white" aria-hidden="true" />
 
               {/* Corner scan animations */}
               {isDone && (
@@ -146,7 +147,7 @@ export function VerifyLivenessScreen() {
               transition={{ duration: 0.3 }}
               className="text-center flex flex-col items-center gap-2"
             >
-              <span className="text-4xl" aria-hidden="true">{currentPrompt.icon}</span>
+              <div aria-hidden="true">{currentPrompt.icon}</div>
               <p className="text-white text-h2 font-bold">{currentPrompt.text}</p>
             </motion.div>
           </AnimatePresence>
@@ -170,7 +171,6 @@ export function VerifyLivenessScreen() {
           </div>
           <div className="bg-black/50 px-3 py-1.5 rounded-full">
             <p className="text-white text-xs">
-              {/* Simulation notice */}
               Demo simulation only
             </p>
           </div>
@@ -180,7 +180,9 @@ export function VerifyLivenessScreen() {
         <div className="absolute bottom-8 left-4 right-4">
           {submitError ? (
             <div className="bg-red-900/90 rounded-lg px-4 py-4 text-center flex flex-col gap-3">
-              <p className="text-white text-sm font-semibold">⚠ Verification Failed</p>
+              <p className="text-white text-sm font-semibold flex items-center justify-center gap-2">
+                <AlertTriangle size={16} /> Verification Failed
+              </p>
               <p className="text-white/80 text-xs">{submitError}</p>
               <div className="flex gap-2">
                 <button
@@ -211,4 +213,3 @@ export function VerifyLivenessScreen() {
     </div>
   );
 }
-
