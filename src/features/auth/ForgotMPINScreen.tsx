@@ -98,9 +98,11 @@ export function ForgotMPINScreen() {
       if (confirmMpin !== newMpin) { setError('MPINs do not match.'); setConfirmMpin(''); return; }
       setIsLoading(true);
       try {
+        const canonical = normalizePHMobile(mobileNumber);
         const users = db.get<User[]>('users') ?? [];
-        const user = users.find(u => u.mobileNumber === mobileNumber);
-        if (user) await resetMPIN(mobileNumber, newMpin, challengeId);
+        const user = users.find(u => u.mobileNumber === canonical);
+        if (!user) throw new Error('User not found');
+        await resetMPIN(canonical!, newMpin, challengeId);
         setStage('done');
       } catch { setError('Failed to update MPIN. Try again.'); }
       finally { setIsLoading(false); }

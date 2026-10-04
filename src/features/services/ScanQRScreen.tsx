@@ -10,9 +10,21 @@ export function ScanQRScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as { returnTo?: string; returnParam?: string; title?: string } | null;
-  const [scanResult, setScanResult] = useState<string | null>(null);
+  const [scanResult, setScanResult] = useState<string | null>(() => sessionStorage.getItem('scanResult'));
+  const [parsedData, setParsedData] = useState<any>(null);
+  const [scannerKey, setScannerKey] = useState(0);
+  const [cameraError, setCameraError] = useState('');
 
   useEffect(() => {
+    if (scanResult) {
+      try {
+        setParsedData(JSON.parse(scanResult));
+      } catch {
+        setParsedData(null);
+      }
+      return;
+    }
+    
     const scanner = new Html5QrcodeScanner(
       "qr-reader", 
       { fps: 10, qrbox: { width: 250, height: 250 } }, 
@@ -22,15 +34,23 @@ export function ScanQRScreen() {
       (text) => {
         scanner.clear();
         setScanResult(text);
+        sessionStorage.setItem('scanResult', text);
       },
-      (error) => {
-        // ignore continuous scanning errors
+      (error: any) => {
+        const errMsg = typeof error === 'string' ? error : error?.message || '';
+        const errName = typeof error === 'string' ? '' : error?.name || '';
+        
+        if (errMsg.includes('NotAllowedError') || errName === 'NotAllowedError') {
+          setCameraError('Camera access denied. Please allow permissions in your browser.');
+        } else if (errMsg.includes('NotFoundError') || errName === 'NotFoundError') {
+          setCameraError('No camera found on this device.');
+        }
       }
     );
     return () => {
       scanner.clear().catch(console.error);
     };
-  }, []);
+  }, [scanResult, scannerKey]);
   return (
     <div className="flex-1 flex flex-col bg-black">
       <div className="px-4 pt-4 pb-2 flex items-center justify-between">
@@ -41,7 +61,8 @@ export function ScanQRScreen() {
         
         {!scanResult ? (
           <>
-            <div id="qr-reader" className="w-full max-w-sm overflow-hidden rounded-xl bg-white text-black"></div>
+            <div id="qr-reader" key={scannerKey} className="w-full max-w-sm overflow-hidden rounded-xl bg-white text-black"></div>
+            {cameraError && <p className="text-error text-center mt-2">{cameraError}</p>}
             <p className="text-white/70 text-body text-center mt-4">
               Point your camera or upload an image to scan.
             </p>
@@ -52,9 +73,23 @@ export function ScanQRScreen() {
         ) : (
           <div className="bg-white rounded-xl p-6 text-center w-full max-w-sm">
             <h2 className="text-xl font-bold text-success mb-2">Scan Successful</h2>
-            <p className="text-body text-text-primary mb-4 break-words font-mono bg-bg p-3 rounded-lg">
-              {scanResult}
-            </p>
+            {parsedData && parsedData.type === 'ePhilID' ? (
+              <div className="text-left mb-4 bg-bg p-4 rounded-lg border border-border">
+                <p className="text-xs text-text-secondary uppercase tracking-wider mb-1">ePhilID Information</p>
+                <div className="mb-2">
+                  <p className="text-xs text-text-secondary">Name</p>
+                  <p className="text-body font-semibold text-text-primary">{parsedData.name || 'Not provided'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-text-secondary">PCN</p>
+                  <p className="text-body font-mono text-text-primary">{parsedData.pcn || 'Not provided'}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-body text-text-primary mb-4 break-words font-mono bg-bg p-3 rounded-lg">
+                {scanResult}
+              </p>
+            )}
             <div className="flex flex-col gap-3 justify-center mt-6">
               {state?.returnTo ? (
                 <button 
@@ -67,7 +102,7 @@ export function ScanQRScreen() {
                   Use Scanned Data
                 </button>
               ) : null}
-              <button onClick={() => { setScanResult(null); window.location.reload(); }} className="px-6 py-3 border border-border rounded-lg text-text-secondary font-medium w-full">
+              <button onClick={() => { setScanResult(null); sessionStorage.removeItem('scanResult'); setCameraError(''); setScannerKey(k => k + 1); }} className="px-6 py-3 border border-border rounded-lg text-text-secondary font-medium w-full">
                 Scan Another
               </button>
             </div>

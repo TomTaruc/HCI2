@@ -6,7 +6,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useServices } from '../../state/ServiceContext';
 
 interface Message {
@@ -61,7 +61,9 @@ let msgId = 0;
 
 export function EGovAIScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const services = useServices();
+  const state = location.state as { initialPrompt?: string } | null;
   const [messages, setMessages] = useState<Message[]>([
     { id: msgId++, role: 'assistant', text: 'Mabuhay! 👋 I\'m the eGov AI Assistant — your guide to Philippine government services. Ask me about ePhilID, NBI Clearance, SSS, PhilHealth, eTravel, and more!' },
   ]);
@@ -69,9 +71,21 @@ export function EGovAIScreen() {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  const [initialSent, setInitialSent] = useState(false);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (state?.initialPrompt && !initialSent) {
+      setInitialSent(true);
+      // Remove it from history so refresh doesn't trigger it again
+      navigate(location.pathname, { replace: true, state: {} });
+      // Needs to be called directly because `send` uses `input` state if no arg
+      send(state.initialPrompt);
+    }
+  }, [state?.initialPrompt, initialSent, navigate, location.pathname]);
 
   const send = async (text?: string) => {
     const msg = text ?? input.trim();

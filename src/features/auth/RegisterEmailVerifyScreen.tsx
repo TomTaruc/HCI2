@@ -1,8 +1,8 @@
 /**
  * RegisterEmailVerifyScreen — Step 5
- * Email verification pending. Mock: auto-advances on button tap.
+ * Email verification pending. Integrates the real local challenge and proof flow.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -10,15 +10,75 @@ import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { useAuth } from '../../state/AuthContext';
 import { db } from '../../mock/db';
-import type { User } from '../../mock/services/authService';
+import { requestEmailOTP, verifyOTP, type User } from '../../mock/services/authService';
 import { Button } from '../../components/ui/Button';
+import { OTPInput } from '../../components/ui/Input';
 
 export function RegisterEmailVerifyScreen() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
   const location = useLocation();
-  const email = (location.state as { email: string })?.email ?? 'your email';
-  const [resendSent, setResendSent] = useState(false); // L-01: State for resend button
+  const email = (location.state as { email: string })?.email ?? user?.email ?? 'your email';
+  const [resendSent, setResendSent] = useState(false);
+  
+  const [challengeId, setChallengeId] = useState('');
+  const [otp, setOtp] = useState('');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (email) {
+      requestEmailOTP(email, 'registration')
+        .then(res => setChallengeId(res.challengeId))
+        .catch(err => setError(err.message || 'Failed to send OTP'));
+    }
+  }, [email]);
+
+  const handleVerify = async (value?: string) => {
+    const code = value ?? otp;
+    if (code.length !== 6) {
+      setError('Enter all 6 digits.');
+      return;
+    }
+    setIsLoading(true);
+    setError('');
+    try {
+      const { valid } = await verifyOTP(challengeId, code);
+      if (valid && user) {
+        const users = db.get<User[]>('users') ?? [];
+        const idx = users.findIndex(u => u.id === user.id);
+        if (idx !== -1) {
+          users[idx].emailVerified = true;
+          const ok = db.set('users', users);
+          if (!ok) throw new Error('Storage error');
+          
+          const challenge = db.get<{ consumed: boolean }>(`otpChallenge:${challengeId}`);
+          if (challenge) {
+            db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+          }
+          await refreshUser();
+        }
+      }
+      navigate('/home', { replace: true });
+    } catch (err: any) {
+      setError(err.message || 'Invalid code.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setResendSent(true);
+    setError('');
+    try {
+      const res = await requestEmailOTP(email, 'registration');
+      setChallengeId(res.challengeId);
+      setTimeout(() => setResendSent(false), 3000);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend');
+      setResendSent(false);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col">
@@ -36,15 +96,27 @@ export function RegisterEmailVerifyScreen() {
           <div className="flex flex-col gap-2">
             <h1 className="text-h1 font-bold text-text-primary">Check your email</h1>
             <p className="text-body text-text-secondary max-w-xs">
-              We sent a verification link to <strong className="text-text-primary">{email}</strong>.
-              Click the link to verify your account.
+              We sent a verification code to <strong className="text-text-primary">{email}</strong>.
             </p>
           </div>
 
           <div className="bg-primary-light rounded-lg px-4 py-3 w-full text-left">
             <p className="text-body-sm text-primary font-medium">
-              📧 Demo mode: Tap the button below to simulate email verification.
+              📧 Demo mode: The code is <strong>123456</strong>
             </p>
+          </div>
+
+          <div className="w-full text-left">
+            <OTPInput 
+              value={otp} 
+              onChange={(val) => {
+                setOtp(val);
+                if (val.length === 6) {
+                  handleVerify(val);
+                }
+              }} 
+              error={error} 
+            />
           </div>
 
           <div className="flex flex-col gap-3 w-full">
@@ -52,30 +124,29 @@ export function RegisterEmailVerifyScreen() {
               variant="primary"
               fullWidth
               size="lg"
-              leftIcon={<CheckCircle size={18} />}
-              onClick={async () => {
-                if (user) {
-                  const users = db.get<User[]>('users') ?? [];
-                  const idx = users.findIndex(u => u.id === user.id);
-                  if (idx !== -1) {
-                    users[idx].emailVerified = true;
-                    db.set('users', users);
-                    await refreshUser();
-                  }
-                }
-                navigate('/home', { replace: true });
-              }}
+              isLoading={isLoading}
+              disabled={otp.length !== 6}
+              onClick={() => handleVerify()}
             >
-              I've verified my email
+              Verify Email
             </Button>
             <Button
               variant="ghost"
               fullWidth
               size="md"
-              onClick={() => { setResendSent(true); setTimeout(() => setResendSent(false), 3000); }}
-              disabled={resendSent}
+              onClick={handleResend}
+              disabled={resendSent || isLoading}
             >
-              {resendSent ? 'Verification link resent!' : 'Resend verification link'}
+              {resendSent ? 'Code resent!' : 'Resend code'}
+            </Button>
+            
+            <Button
+              variant="outline"
+              fullWidth
+              size="md"
+              onClick={() => navigate('/home', { replace: true })}
+            >
+              Skip for now
             </Button>
           </div>
 

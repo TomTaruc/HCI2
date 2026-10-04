@@ -57,7 +57,7 @@ const ANNOUNCEMENTS = [
     subtitle: 'Access your BIR TIN ID in the Mobile ID wallet →',
     bg: 'bg-accent',
     textColor: 'text-text-primary',
-    path: '/id/qr',
+    path: '/mobile-id',
     icon: <CreditCard size={48} className="opacity-20 text-text-primary" />
   },
 ];

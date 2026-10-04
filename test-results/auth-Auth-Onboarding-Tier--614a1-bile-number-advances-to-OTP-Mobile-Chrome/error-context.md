@@ -18,36 +18,18 @@ Test timeout of 30000ms exceeded.
 ```
 Error: locator.click: Test timeout of 30000ms exceeded.
 Call log:
-  - waiting for locator('button:has-text("Continue")')
+  - waiting for locator('button:has-text("Create Account")')
 
 ```
 
 # Page snapshot
 
 ```yaml
-- generic [ref=f2e4]:
-  - banner [ref=f2e5]:
-    - button "Go back" [ref=f2e6]
-    - heading "Create Account" [level=1] [ref=f2e10]
-  - main [ref=f2e11]:
-    - generic [ref=f2e12]:
-      - generic "Step 1 of 5"
-      - generic [ref=f2e13]:
-        - heading "Mobile Number" [level=1] [ref=f2e17]
-        - paragraph [ref=f2e18]: Enter your Philippine mobile number. We will send a one-time password (OTP) to verify it.
-      - generic [ref=f2e19]:
-        - generic [ref=f2e20]:
-          - generic [ref=f2e21]: Mobile Number
-          - generic [ref=f2e22]:
-            - generic: "+63"
-            - textbox "Mobile Number" [active] [ref=f2e23]:
-              - /placeholder: 09XXXXXXXXX
-              - text: "09171112222"
-        - paragraph [ref=f2e25]: 📱 Make sure your number is active and can receive SMS. The OTP expires in 5 minutes.
-        - button "Send OTP" [ref=f2e26]
-      - paragraph [ref=f2e27]:
-        - text: Already have an account?
-        - button "Log In" [ref=f2e28]
+- generic [active] [ref=f2e1]:
+  - text: The server is configured with a public base URL of /HCI2/ - did you mean to visit
+  - link "/HCI2/welcome" [ref=f2e2] [cursor=pointer]:
+    - /url: /HCI2/welcome
+  - text: instead?
 ```
 
 # Test source
@@ -82,10 +64,10 @@ Call log:
   27  | 
   28  |   test('AUTH-02: Register with valid mobile number advances to OTP', async ({ page }) => {
   29  |     await page.goto('/welcome');
-  30  |     await page.locator('button:has-text("Create Account")').click();
+> 30  |     await page.locator('button:has-text("Create Account")').click();
+      |                                                             ^ Error: locator.click: Test timeout of 30000ms exceeded.
   31  |     await page.fill('input[type="tel"]', '09171112222');
-> 32  |     await page.locator('button:has-text("Continue")').click();
-      |                                                       ^ Error: locator.click: Test timeout of 30000ms exceeded.
+  32  |     await page.locator('button:has-text("Continue")').click();
   33  |     await expect(page.locator('text=Enter OTP')).toBeVisible();
   34  |   });
   35  | 
@@ -184,6 +166,4 @@ Call log:
   128 |     // Skip email verify for now by clicking "I\'ll do this later" if present, or just wait for redirect
   129 |     // The RegisterEmailVerifyScreen has "Skip for now"
   130 |     await expect(page.locator('text=Verify your email')).toBeVisible();
-  131 |     await page.locator('button:has-text("Skip for now")').click();
-  132 | 
 ```

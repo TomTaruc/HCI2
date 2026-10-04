@@ -13,7 +13,7 @@ import { db } from '../../mock/db';
 import { useAuth } from '../../state/AuthContext';
 
 type Stage = 'type' | 'details' | 'delivery' | 'review' | 'done';
-const DOC_TYPES = ['Birth Certificate', 'Marriage Certificate', 'Death Certificate'];
+const DOC_TYPES = ['Birth Certificate', 'Marriage Certificate', 'Death Certificate', 'National ID (Paper)'];
 
 export function PSADocumentScreen() {
   const navigate = useNavigate();

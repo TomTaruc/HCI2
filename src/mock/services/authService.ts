@@ -147,8 +147,18 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
   // Create a mock OTP challenge
-  // Use canonical and purpose as the ID to inherently invalidate old challenges
-  const challengeId = `otp-${canonical.replace('+', '')}-${purpose}`;
+  // Invalidate any previous pending challenges for this destination
+  const allKeys = db.get<string[]>('__keys__') || [];
+  allKeys.forEach(key => {
+    if (key.startsWith('otpChallenge:')) {
+      const existing = db.get<{ destination: string; purpose: string }>(key);
+      if (existing && existing.destination === canonical && existing.purpose === purpose) {
+        db.remove(key);
+      }
+    }
+  });
+
+  const challengeId = `otp-${canonical.replace('+', '')}-${purpose}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const challenge = {
     id: challengeId,
     destination: canonical,
@@ -175,7 +185,18 @@ export async function requestEmailOTP(email: string, purpose: 'registration' | '
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new ApiError('INVALID_EMAIL', 'Invalid email address.');
 
-  const challengeId = `otp-email-${normalized}-${purpose}`;
+  // Invalidate any previous pending challenges
+  const allKeys = db.get<string[]>('__keys__') || [];
+  allKeys.forEach(key => {
+    if (key.startsWith('otpChallenge:')) {
+      const existing = db.get<{ destination: string; purpose: string }>(key);
+      if (existing && existing.destination === normalized && existing.purpose === purpose) {
+        db.remove(key);
+      }
+    }
+  });
+
+  const challengeId = `otp-email-${normalized}-${purpose}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const challenge = {
     id: challengeId,
     destination: normalized,
@@ -217,14 +238,17 @@ export async function verifyOTP(
   if (challenge.attempts >= challenge.maxAttempts) throw new ApiError('OTP_MAX_ATTEMPTS', 'Too many incorrect attempts. Please request a new code.');
 
   // Increment attempts
-  db.set(`otpChallenge:${challengeId}`, { ...challenge, attempts: challenge.attempts + 1 });
+  const ok1 = db.set(`otpChallenge:${challengeId}`, { ...challenge, attempts: challenge.attempts + 1 });
+  if (!ok1) throw new ApiError('STORAGE_ERROR', 'Failed to update attempts.');
 
   if (code !== challenge.code) {
     throw new ApiError('OTP_INVALID', 'Incorrect code. Please check and try again.');
   }
 
   // Mark as verified but not consumed (consumed happens when used for mutation)
-  db.set(`otpChallenge:${challengeId}`, { ...challenge, verified: true });
+  const ok2 = db.set(`otpChallenge:${challengeId}`, { ...challenge, verified: true });
+  if (!ok2) throw new ApiError('STORAGE_ERROR', 'Failed to verify OTP.');
+  
   return { valid: true };
 }
 

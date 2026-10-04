@@ -3,7 +3,7 @@
  * Enter 10-digit PH mobile number
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,6 +29,10 @@ export function RegisterMobileScreen() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+
+  useEffect(() => {
+    sessionStorage.removeItem('reg_mpin');
+  }, []);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),

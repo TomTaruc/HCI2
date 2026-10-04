@@ -304,20 +304,23 @@ export function SettingsScreen() {
       </ScreenContainer>
 
       {/* Main content inert when modal is open for a11y */}
-      {modal && createPortal(
+      {createPortal(
         <AnimatePresence>
-          <div
-            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
-            role="dialog"
-            aria-modal="true"
-            onClick={e => e.target === e.currentTarget && closeModal()}
-          >
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-white rounded-t-2xl w-full px-6 py-6 pb-safe relative overflow-hidden"
-              ref={modalRef}
+          {modal && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40"
+              role="dialog"
+              aria-modal="true"
+              onClick={e => e.target === e.currentTarget && closeModal()}
             >
-              {modal === "change-mpin" && (
+              <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-white rounded-t-2xl w-full px-6 py-6 pb-safe relative overflow-hidden max-h-[90vh] overflow-y-auto"
+                ref={modalRef}
+                onClick={e => e.stopPropagation()}
+              >
+                {modal === "change-mpin" && (
                 <div className="flex flex-col gap-5 pb-6">
                   <div className="flex items-center justify-between">
                     <h2 className="text-h2 font-bold text-text-primary">{t("settings.changeMPIN")}</h2>
@@ -515,8 +518,9 @@ export function SettingsScreen() {
                   <Button variant="primary" fullWidth size="lg" onClick={closeModal}>Got it</Button>
                 </div>
               )}
+              </motion.div>
             </motion.div>
-          </div>
+          )}
         </AnimatePresence>,
         document.body
       )}

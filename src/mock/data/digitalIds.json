@@ -10,7 +10,7 @@
       "issuedDate": "2025-01-15",
       "expiresDate": null,
       "holderName": "REYES SANTOS, MARIA LOURDES G.",
-      "qrPayload": "EGOV-EPHILID-SAMPLE-MRG-NOT-A-REAL-ID-NOT-VALID-FOR-OFFICIAL-USE",
+      "qrPayload": "{\"v\":\"1\",\"type\":\"ePhilID\",\"pcn\":\"1234-5678-9012-3456\"}",
       "description": "Issued under the Philippine Identification System (PhilSys), Republic Act No. 11055. SAMPLE ONLY - NOT VALID FOR OFFICIAL USE.",
       "color": "#0038A8",
       "notice": "SAMPLE - NOT VALID FOR OFFICIAL USE"

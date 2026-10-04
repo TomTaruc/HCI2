@@ -283,7 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
    */
   const setUserAfterSignup = useCallback((u: User) => {
     if (!_establishSession(u)) {
-      console.error('Failed to establish session after signup.');
+      throw new Error('Failed to establish session after signup. Storage may be unavailable.');
     }
   }, [resetIdleTimer]); // eslint-disable-line react-hooks/exhaustive-deps
 

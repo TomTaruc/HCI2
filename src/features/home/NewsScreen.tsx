@@ -27,7 +27,7 @@ export function NewsScreen() {
           <h1 className="text-h2 font-bold text-text-primary">Government News</h1>
         </div>
         {NEWS.map((item, i) => (
-          <button key={item.id} className="w-full bg-white rounded-lg border border-border p-4 text-left hover:shadow-card-hover hover:border-primary/20 transition-all">
+          <button key={item.id} onClick={() => alert(`Opening article: ${item.title}`)} className="w-full bg-white rounded-lg border border-border p-4 text-left hover:shadow-card-hover hover:border-primary/20 transition-all">
             <div className="flex gap-3">
               <div className="w-10 h-10 bg-primary-light rounded-lg flex items-center justify-center text-xl shrink-0">
                 {item.emoji}

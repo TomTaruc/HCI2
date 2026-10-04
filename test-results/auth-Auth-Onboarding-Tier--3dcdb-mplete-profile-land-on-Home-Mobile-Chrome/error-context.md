@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: auth.spec.ts >> Auth & Onboarding (Tier 1) >> AUTH-03: Register with invalid mobile number shows error
-- Location: tests\e2e\auth.spec.ts:36:3
+- Name: auth.spec.ts >> Auth & Onboarding (Tier 1) >> AUTH-07, 08: Create MPIN matching, complete profile, land on Home
+- Location: tests\e2e\auth.spec.ts:109:3
 
 # Error details
 
@@ -16,9 +16,9 @@ Test timeout of 30000ms exceeded.
 ```
 
 ```
-Error: locator.click: Test timeout of 30000ms exceeded.
+Error: page.fill: Test timeout of 30000ms exceeded.
 Call log:
-  - waiting for locator('button:has-text("Create Account")')
+  - waiting for locator('input[type="tel"]')
 
 ```
 
@@ -27,24 +27,14 @@ Call log:
 ```yaml
 - generic [active] [ref=f2e1]:
   - text: The server is configured with a public base URL of /HCI2/ - did you mean to visit
-  - link "/HCI2/welcome" [ref=f2e2] [cursor=pointer]:
-    - /url: /HCI2/welcome
+  - link "/HCI2/register" [ref=f2e2] [cursor=pointer]:
+    - /url: /HCI2/register
   - text: instead?
 ```
 
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | test.describe('Auth & Onboarding (Tier 1)', () => {
-  4   |   test.beforeEach(async ({ page }) => {
-  5   |     // Clear storage to start fresh
-  6   |     await page.goto('/');
-  7   |     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
-  8   |     // Reload to ensure state is clear
-  9   |     await page.goto('/');
-  10  |   });
   11  | 
   12  |   test('AUTH-01: Launch app fresh shows Splash then Welcome screen', async ({ page }) => {
   13  |     // Clear disclaimer flag specifically for this test
@@ -72,8 +62,7 @@ Call log:
   35  | 
   36  |   test('AUTH-03: Register with invalid mobile number shows error', async ({ page }) => {
   37  |     await page.goto('/welcome');
-> 38  |     await page.locator('button:has-text("Create Account")').click();
-      |                                                             ^ Error: locator.click: Test timeout of 30000ms exceeded.
+  38  |     await page.locator('button:has-text("Create Account")').click();
   39  |     await page.fill('input[type="tel"]', '0917');
   40  |     await page.locator('button:has-text("Continue")').click();
   41  |     await expect(page.locator('text=Invalid mobile number')).toBeVisible();
@@ -146,7 +135,8 @@ Call log:
   108 | 
   109 |   test('AUTH-07, 08: Create MPIN matching, complete profile, land on Home', async ({ page }) => {
   110 |     await page.goto('/register');
-  111 |     await page.fill('input[type="tel"]', '09171112222');
+> 111 |     await page.fill('input[type="tel"]', '09171112222');
+      |                ^ Error: page.fill: Test timeout of 30000ms exceeded.
   112 |     await page.locator('button:has-text("Continue")').click();
   113 |     for (let i = 0; i < 6; i++) await page.locator('input[type="text"]').nth(i).fill((i+1).toString());
   114 |     
@@ -174,4 +164,26 @@ Call log:
   136 | 
   137 |   test('AUTH-09: Log out, log back in', async ({ page }) => {
   138 |     // Use seeded account
+  139 |     await page.goto('/welcome');
+  140 |     await page.locator('button:has-text("Log In")').click();
+  141 |     await page.fill('input[type="tel"]', '09171234567');
+  142 |     await page.locator('button:has-text("Continue")').click();
+  143 |     
+  144 |     // Fill MPIN 111111
+  145 |     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
+  146 |     
+  147 |     // Home
+  148 |     await expect(page.locator('text=Mabuhay')).toBeVisible();
+  149 |     
+  150 |     // Log out
+  151 |     await page.locator('text=Account').click();
+  152 |     await page.locator('button:has-text("Log Out")').click();
+  153 |     
+  154 |     // Welcome screen
+  155 |     await expect(page.locator('text=Log In')).toBeVisible();
+  156 |   });
+  157 |   
+  158 |   // And so on for the rest of AUTH...
+  159 | });
+  160 | 
 ```

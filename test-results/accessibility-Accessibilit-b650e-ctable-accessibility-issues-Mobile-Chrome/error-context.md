@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: accessibility.spec.ts >> Accessibility (Tier 1) >> Home screen should not have any automatically detectable accessibility issues
-- Location: tests\e2e\accessibility.spec.ts:18:3
+- Name: accessibility.spec.ts >> Accessibility (Tier 1) >> Mobile ID screen should not have any automatically detectable accessibility issues
+- Location: tests\e2e\accessibility.spec.ts:24:3
 
 # Error details
 

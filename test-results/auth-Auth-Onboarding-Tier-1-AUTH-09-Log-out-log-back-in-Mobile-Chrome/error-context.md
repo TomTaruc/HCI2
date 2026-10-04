@@ -6,8 +6,8 @@
 
 # Test info
 
-- Name: auth.spec.ts >> Auth & Onboarding (Tier 1) >> AUTH-03: Register with invalid mobile number shows error
-- Location: tests\e2e\auth.spec.ts:36:3
+- Name: auth.spec.ts >> Auth & Onboarding (Tier 1) >> AUTH-09: Log out, log back in
+- Location: tests\e2e\auth.spec.ts:137:3
 
 # Error details
 
@@ -18,7 +18,7 @@ Test timeout of 30000ms exceeded.
 ```
 Error: locator.click: Test timeout of 30000ms exceeded.
 Call log:
-  - waiting for locator('button:has-text("Create Account")')
+  - waiting for locator('button:has-text("Log In")')
 
 ```
 
@@ -35,46 +35,6 @@ Call log:
 # Test source
 
 ```ts
-  1   | import { test, expect } from '@playwright/test';
-  2   | 
-  3   | test.describe('Auth & Onboarding (Tier 1)', () => {
-  4   |   test.beforeEach(async ({ page }) => {
-  5   |     // Clear storage to start fresh
-  6   |     await page.goto('/');
-  7   |     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
-  8   |     // Reload to ensure state is clear
-  9   |     await page.goto('/');
-  10  |   });
-  11  | 
-  12  |   test('AUTH-01: Launch app fresh shows Splash then Welcome screen', async ({ page }) => {
-  13  |     // Clear disclaimer flag specifically for this test
-  14  |     await page.evaluate(() => {
-  15  |       localStorage.removeItem('egov_disclaimerShown');
-  16  |     });
-  17  |     await page.goto('/');
-  18  |     
-  19  |     // Should see splash screen briefly
-  20  |     await expect(page.locator('text=Your Government. One App.')).toBeVisible({ timeout: 10000 });
-  21  |     // Then wait for navigation to Welcome
-  22  |     await expect(page.locator('button:has-text("Log In")')).toBeVisible({ timeout: 15000 });
-  23  |     // Disclaimer should be visible
-  24  |     await expect(page.locator('text=DISCLAIMER: ACADEMIC PROTOTYPE ONLY')).toBeVisible();
-  25  |     await page.locator('button:has-text("I understand — Proceed")').click({ force: true });
-  26  |   });
-  27  | 
-  28  |   test('AUTH-02: Register with valid mobile number advances to OTP', async ({ page }) => {
-  29  |     await page.goto('/welcome');
-  30  |     await page.locator('button:has-text("Create Account")').click();
-  31  |     await page.fill('input[type="tel"]', '09171112222');
-  32  |     await page.locator('button:has-text("Continue")').click();
-  33  |     await expect(page.locator('text=Enter OTP')).toBeVisible();
-  34  |   });
-  35  | 
-  36  |   test('AUTH-03: Register with invalid mobile number shows error', async ({ page }) => {
-  37  |     await page.goto('/welcome');
-> 38  |     await page.locator('button:has-text("Create Account")').click();
-      |                                                             ^ Error: locator.click: Test timeout of 30000ms exceeded.
-  39  |     await page.fill('input[type="tel"]', '0917');
   40  |     await page.locator('button:has-text("Continue")').click();
   41  |     await expect(page.locator('text=Invalid mobile number')).toBeVisible();
   42  |   });
@@ -174,4 +134,27 @@ Call log:
   136 | 
   137 |   test('AUTH-09: Log out, log back in', async ({ page }) => {
   138 |     // Use seeded account
+  139 |     await page.goto('/welcome');
+> 140 |     await page.locator('button:has-text("Log In")').click();
+      |                                                     ^ Error: locator.click: Test timeout of 30000ms exceeded.
+  141 |     await page.fill('input[type="tel"]', '09171234567');
+  142 |     await page.locator('button:has-text("Continue")').click();
+  143 |     
+  144 |     // Fill MPIN 111111
+  145 |     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
+  146 |     
+  147 |     // Home
+  148 |     await expect(page.locator('text=Mabuhay')).toBeVisible();
+  149 |     
+  150 |     // Log out
+  151 |     await page.locator('text=Account').click();
+  152 |     await page.locator('button:has-text("Log Out")').click();
+  153 |     
+  154 |     // Welcome screen
+  155 |     await expect(page.locator('text=Log In')).toBeVisible();
+  156 |   });
+  157 |   
+  158 |   // And so on for the rest of AUTH...
+  159 | });
+  160 | 
 ```

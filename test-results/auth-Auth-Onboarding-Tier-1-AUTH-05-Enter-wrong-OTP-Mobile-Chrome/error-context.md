@@ -25,24 +25,11 @@ Call log:
 # Page snapshot
 
 ```yaml
-- generic [ref=f2e4]:
-  - generic [ref=f2e5]:
-    - generic [ref=f2e6]:
-      - button "EN" [pressed] [ref=f2e7]
-      - button "FIL" [ref=f2e8]
-    - generic [ref=f2e9]:
-      - img "eGovPH logo" [ref=f2e10]
-      - generic [ref=f2e18]:
-        - generic [ref=f2e19]: eGOVPH
-        - generic [ref=f2e20]: Bagong Pilipinas
-      - paragraph [ref=f2e21]: Your Government. One App.
-      - paragraph [ref=f2e22]: Access over 1,000 government services from national agencies and local government units — all in one place.
-  - generic [ref=f2e23]:
-    - button "Log In" [ref=f2e24]
-    - button "Create Account" [ref=f2e25]
-    - button "Continue as Guest (eTravel only)" [ref=f2e26]
-    - paragraph [ref=f2e27]: By continuing, you agree to our Terms of Service and Privacy Policy.
-    - generic [ref=f2e28]: ⚠ Unofficial Research Prototype — Not the real eGovPH
+- generic [active] [ref=f2e1]:
+  - text: The server is configured with a public base URL of /HCI2/ - did you mean to visit
+  - link "/HCI2/register" [ref=f2e2] [cursor=pointer]:
+    - /url: /HCI2/register
+  - text: instead?
 ```
 
 # Test source

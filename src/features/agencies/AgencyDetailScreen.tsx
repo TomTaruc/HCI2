@@ -342,7 +342,11 @@ export function AgencyDetailScreen() {
                 `How do I apply for a ${agency.shortName} loan?`,
                 `What documents do I need for ${agency.shortName} claims?`,
               ].map(q => (
-                <button key={q} className="flex items-start gap-2 text-left hover:text-primary transition-colors">
+                <button 
+                  key={q} 
+                  onClick={() => navigate('/egov-ai', { state: { initialPrompt: q } })}
+                  className="flex items-start gap-2 text-left hover:text-primary transition-colors"
+                >
                   <span className="text-primary mt-0.5" aria-hidden="true">?</span>
                   <span className="text-body-sm text-text-primary">{q}</span>
                 </button>
@@ -352,7 +356,7 @@ export function AgencyDetailScreen() {
             <Button
               variant="outline"
               fullWidth
-              onClick={() => navigate('/consultation')}
+              onClick={() => navigate('/consultation', { state: { agencyId: agency.id } })}
             >
               Send a concern to {agency.shortName}
             </Button>

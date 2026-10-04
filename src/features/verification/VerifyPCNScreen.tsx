@@ -24,7 +24,7 @@ import { useLocation } from 'react-router-dom';
 export function VerifyPCNScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [pcn, setPcn] = useState('');
+  const [pcn, setPcn] = useState(sessionStorage.getItem('verify_pcn') || '');
   const [isValidating, setIsValidating] = useState(false);
   const [isScanLoading, setIsScanLoading] = useState(false);
   const [error, setError] = useState('');
@@ -49,8 +49,19 @@ export function VerifyPCNScreen() {
 
   useEffect(() => {
     if (state?.scannedPCN) {
-      setPcn(formatPCNInput(state.scannedPCN));
-      // Optionally remove it from state so it doesn't re-apply on reload
+      try {
+        const payload = JSON.parse(state.scannedPCN);
+        if (payload.type !== 'ePhilID' || payload.v !== '1') {
+          setError('Invalid or unsupported QR code format.');
+        } else if (!/^\d{4}-\d{4}-\d{4}-\d{4}$/.test(payload.pcn)) {
+          setError('Malformed PCN in QR code.');
+        } else {
+          setPcn(payload.pcn);
+          sessionStorage.setItem('verify_pcn', payload.pcn);
+        }
+      } catch {
+        setError('Invalid QR code format. Please scan a valid National ID QR.');
+      }
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [state?.scannedPCN, navigate, location.pathname]);
@@ -58,6 +69,7 @@ export function VerifyPCNScreen() {
   const handlePCNChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPCNInput(e.target.value);
     setPcn(formatted);
+    sessionStorage.setItem('verify_pcn', formatted);
     setError('');
   };
 
@@ -70,6 +82,7 @@ export function VerifyPCNScreen() {
       const demoPCN = getDemoPCN(user.id);
       if (demoPCN) {
         setPcn(demoPCN);
+        sessionStorage.setItem('verify_pcn', demoPCN);
       } else {
         setError('No sample PCN is available for this account. Enter your PCN manually.');
       }

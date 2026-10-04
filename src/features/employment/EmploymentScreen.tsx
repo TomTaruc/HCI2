@@ -55,7 +55,10 @@ export function EmploymentScreen() {
                     <div><span className="text-text-secondary">Salary: </span><span className="font-semibold text-text-primary">{job.salary}</span></div>
                     <div><span className="text-text-secondary">Deadline: </span><span className="font-semibold text-error">{job.deadline}</span></div>
                   </div>
-                  <button className="w-full h-10 bg-primary text-white rounded-md text-body-sm font-semibold hover:bg-primary-dark transition-colors">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); alert('Application submitted successfully for demo purposes.'); }}
+                    className="w-full h-10 bg-primary text-white rounded-md text-body-sm font-semibold hover:bg-primary-dark transition-colors"
+                  >
                     Apply Now (Demo)
                   </button>
                 </motion.div>
