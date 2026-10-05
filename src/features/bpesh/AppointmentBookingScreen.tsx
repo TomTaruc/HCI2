@@ -12,6 +12,7 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
 import { useAuth } from '../../state/AuthContext';
+import { createPendingPayment } from '../../mock/services/paymentService';
 
 type Stage = 'service' | 'schedule' | 'review' | 'done';
 
@@ -44,6 +45,24 @@ export function AppointmentBookingScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [refNumber, setRefNumber] = useState('');
   const [error, setError] = useState('');
+
+  // Handle return from eGovPay
+  React.useEffect(() => {
+    const state = location.state as { paymentSuccess?: boolean; paymentId?: string };
+    if (state?.paymentSuccess && state?.paymentId && stage !== 'done') {
+      const list = db.get<any[]>('appointments') ?? [];
+      const p = list.find(a => a.id === state.paymentId && a.userId === user?.id);
+      if (p) {
+        setRefNumber(p.referenceNumber);
+        setSelectedService(p.serviceType);
+        const [d, t] = p.scheduledFor.split(' ');
+        setSelectedDate(d);
+        setSelectedTime(t);
+        setStage('done');
+        navigate('.', { replace: true, state: {} });
+      }
+    }
+  }, [location.state, navigate, stage, user?.id]);
 
   const today = new Date();
   const tomorrow = new Date(today);
@@ -78,7 +97,17 @@ export function AppointmentBookingScreen() {
       return;
     }
     
-    setStage('done');
+    // Redirect to eGovPay for payment
+    createPendingPayment({
+      id: ref,
+      userId: user!.id,
+      sourceService: 'appointments',
+      amount: selectedService.includes('NBI') ? 130 : 150,
+      description: `${selectedService} Fee`,
+      returnTo: '/bpesh/appointment'
+    });
+    
+    navigate('/egovpay', { state: { pendingPaymentId: ref } });
   };
 
   const getDisplayDate = (isoDate: string) => {

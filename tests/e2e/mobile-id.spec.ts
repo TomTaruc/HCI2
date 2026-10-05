@@ -1,18 +1,19 @@
+import { navigateTo, getExpectedUrl } from './utils/nav';
 import { test, expect } from '@playwright/test';
 
 test.describe('Mobile ID / Digital ID Wallet (Tier 1 - Flow B)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
     // Use seeded account 1 (verified)
-    await page.goto('/welcome');
+    await navigateTo(page, '/welcome');
     await page.locator('button:has-text("Log In")').click();
-    await page.fill('input[type="tel"]', '09189876543');
+    await page.fill('input[type="tel"]', '9189876543');
     await page.locator('button:has-text("Continue")').click();
     await expect(page.locator('text=/Enter your 6-digit MPIN/')).toBeVisible();
     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
-    await page.waitForURL('**/home', { timeout: 15000 });
+    await page.waitForURL(getExpectedUrl('/home'), { timeout: 15000 });
     await expect(page.locator('text=Mabuhay')).toBeVisible({ timeout: 15000 });
   });
 
@@ -22,7 +23,7 @@ test.describe('Mobile ID / Digital ID Wallet (Tier 1 - Flow B)', () => {
     await expect(page.locator('text=Digital National ID')).toBeVisible();
     
     // Check that unavailable ID is rendered but locked
-    const unavailableId = page.locator('button', { hasText: 'Professional License' });
+    const unavailableId = page.locator('button', { hasText: 'ePRC License' });
     await expect(unavailableId).toBeVisible();
     await expect(unavailableId).toBeDisabled();
   });
@@ -51,16 +52,16 @@ test.describe('Mobile ID / Digital ID Wallet (Tier 1 - Flow B)', () => {
   });
 
   test('ID-06: Unverified account reaches Mobile ID', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
     // Login unverified
-    await page.goto('/welcome');
+    await navigateTo(page, '/welcome');
     await page.locator('button:has-text("Log In")').click();
-    await page.fill('input[type="tel"]', '09171234567');
+    await page.fill('input[type="tel"]', '9171234567');
     await page.locator('button:has-text("Continue")').click();
     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
-    await page.waitForURL('**/home', { timeout: 15000 });
+    await page.waitForURL(getExpectedUrl('/home'), { timeout: 15000 });
     await expect(page.locator('text=Mabuhay')).toBeVisible({ timeout: 15000 });
     
     await page.locator('text=Mobile ID').click();

@@ -104,7 +104,9 @@ export function ForgotMPINScreen() {
         if (!user) throw new Error('User not found');
         await resetMPIN(canonical!, newMpin, challengeId);
         setStage('done');
-      } catch { setError('Failed to update MPIN. Try again.'); }
+      } catch (err: unknown) { 
+        setError(err instanceof Error ? err.message : 'Failed to update MPIN. Try again.'); 
+      }
       finally { setIsLoading(false); }
     }
   };

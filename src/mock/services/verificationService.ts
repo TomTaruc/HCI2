@@ -112,7 +112,7 @@ export function getPhilSysRecords() {
   
   // Seed if missing
   db.set('philSysRecords', MOCK_PHILSYS_RECORDS);
-  return MOCK_PHILSYS_RECORDS;
+  return JSON.parse(JSON.stringify(MOCK_PHILSYS_RECORDS));
 }
 
 // ----------------------------------------------------------------
@@ -328,19 +328,20 @@ export async function approveVerification(userId: string): Promise<void> {
   if (Array.isArray(digitalIds)) return; // Should be object by now
   const userIds = digitalIds[userId] || [];
   
-  if (!userIds.find(d => d.type === 'national-id')) {
+  if (!userIds.find(d => d.type === 'ePhilID')) {
     const newId = {
-      type: 'national-id',
-      label: 'National ID',
+      type: 'ePhilID',
+      label: 'Digital National ID',
       agency: 'Philippine Statistics Authority',
       available: true,
-      idNumber: users[idx].pcn,
+      idNumber: `SAMPLE-${users[idx].pcn}`,
+      pcn: users[idx].pcn,
       issuedDate: new Date().toISOString(),
       expiresDate: null,
       holderName: users[idx].fullName,
-      qrPayload: `PH-NAT-ID-${users[idx].pcn}`,
-      description: 'The official digital equivalent of the PhilSys ID.',
-      color: '#1A365D'
+      qrPayload: JSON.stringify({ v: "1", type: "ePhilID", pcn: users[idx].pcn }),
+      description: 'Issued under the Philippine Identification System (PhilSys). SAMPLE ONLY - NOT VALID FOR OFFICIAL USE.',
+      color: '#0038A8'
     };
     digitalIds[userId] = [...userIds, newId];
     db.set('digitalIds', digitalIds);
@@ -396,7 +397,7 @@ export function getDemoPCN(userId: string): string {
   // Each user has their own demo PCN that matches their PhilSys record
   const records = getPhilSysRecords();
   for (const [pcn, record] of Object.entries(records)) {
-    if (record.userId === userId) return pcn;
+    if ((record as any).userId === userId) return pcn;
   }
   return '';
 }

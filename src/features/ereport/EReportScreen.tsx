@@ -24,8 +24,11 @@ export function EReportScreen() {
   const [done, setDone] = useState(false);
   const [refNumber, setRefNumber] = useState('');
 
+  const [apiError, setApiError] = useState('');
+
   const handleSubmit = async () => {
     setIsLoading(true);
+    setApiError('');
     await new Promise(r => setTimeout(r, 1200));
     const ref = 'RPT-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
@@ -35,7 +38,7 @@ export function EReportScreen() {
     setIsLoading(false);
     
     if (!ok) {
-      alert('Failed to submit report. Please try again.');
+      setApiError('Failed to submit report. Please try again.');
       return;
     }
     
@@ -79,6 +82,11 @@ export function EReportScreen() {
                 placeholder="Describe the incident in detail…"
                 className="w-full px-4 py-3 bg-white border border-border rounded-md text-body text-text-primary outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 resize-none" />
             </div>
+            {apiError && (
+              <p className="text-body-sm text-error bg-error/10 rounded-md px-3 py-2" role="alert">
+                {apiError}
+              </p>
+            )}
             <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSubmit} disabled={!incidentType || !location || !description}>Submit Report</Button>
           </>
         ) : (

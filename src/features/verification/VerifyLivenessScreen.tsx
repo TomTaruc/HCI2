@@ -4,19 +4,19 @@
  * 3–5 second sequence of prompts, ends in a checkmark.
  * Spec requirement: MUST NOT implement real biometric verification.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, User, ScanLine, Eye, RotateCw, AlertTriangle } from 'lucide-react';
+import { CheckCircle, ScanLine, Eye, RotateCw, AlertTriangle, VideoOff } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { submitVerification } from '../../mock/services/verificationService';
 import { useAuth } from '../../state/AuthContext';
 
 const LIVENESS_PROMPTS = [
-  { text: 'Position your face in the frame', icon: <User size={40} className="text-white" />, duration: 1500 },
-  { text: 'Hold still…', icon: <ScanLine size={40} className="text-white" />, duration: 1500 },
-  { text: 'Blink now…', icon: <Eye size={40} className="text-white" />, duration: 1200 },
-  { text: 'Turn slightly to the right…', icon: <RotateCw size={40} className="text-white" />, duration: 1500 },
+  { text: 'Position your face in the frame', icon: <ScanLine size={40} className="text-white" />, duration: 2000 },
+  { text: 'Hold still…', icon: <ScanLine size={40} className="text-white" />, duration: 2000 },
+  { text: 'Blink now…', icon: <Eye size={40} className="text-white" />, duration: 1500 },
+  { text: 'Turn slightly to the right…', icon: <RotateCw size={40} className="text-white" />, duration: 2000 },
   { text: 'Verifying your identity…', icon: <CheckCircle size={40} className="text-success" />, duration: 1500 },
 ];
 
@@ -40,6 +40,34 @@ export function VerifyLivenessScreen() {
       navigate('/verify/pcn', { replace: true });
     }
   }, [navigate]);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const [cameraError, setCameraError] = useState(false);
+
+  // Initialize camera
+  useEffect(() => {
+    async function setupCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      } catch (err) {
+        console.error("Failed to access camera", err);
+        setCameraError(true);
+      }
+    }
+    setupCamera();
+
+    return () => {
+      // Cleanup stream
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let totalDelay = 0;
@@ -85,13 +113,25 @@ export function VerifyLivenessScreen() {
 
   return (
     <div className="flex-1 flex flex-col bg-black">
-      {/* Full-screen camera viewfinder (pure UI simulation — no camera API) */}
       <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Simulated camera feed — gray gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-gray-800" />
+        {/* Real camera feed */}
+        <video 
+          ref={videoRef}
+          autoPlay 
+          playsInline 
+          muted 
+          className="absolute inset-0 w-full h-full object-cover bg-black"
+        />
+
+        {cameraError && (
+          <div className="absolute inset-0 bg-gray-900 flex flex-col items-center justify-center gap-4 text-center px-6">
+            <VideoOff size={48} className="text-error" />
+            <p className="text-white">Camera access denied or unavailable. Please enable permissions to proceed.</p>
+          </div>
+        )}
 
         {/* Scanning overlay grid (visual cue) */}
-        <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0 opacity-10 pointer-events-none">
           <svg width="100%" height="100%" aria-hidden="true">
             <defs>
               <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
@@ -105,14 +145,12 @@ export function VerifyLivenessScreen() {
         {/* Face frame oval */}
         <div className="relative z-10 flex flex-col items-center gap-8">
           <div className="relative">
-            {/* Oval face guide */}
+            {/* Oval face guide cutout effect */}
             <div
-              className="w-48 h-60 rounded-full border-4 border-white/60 relative overflow-hidden flex items-center justify-center"
-              style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)' }}
+              className="w-56 h-72 rounded-full border-4 border-primary relative overflow-hidden flex items-center justify-center"
+              style={{ boxShadow: '0 0 0 9999px rgba(0,0,0,0.7)' }}
               aria-label="Position your face here"
             >
-              {/* Placeholder avatar */}
-              <User size={80} className="text-white" aria-hidden="true" />
 
               {/* Corner scan animations */}
               {isDone && (

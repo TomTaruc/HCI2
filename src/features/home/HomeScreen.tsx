@@ -139,7 +139,7 @@ export function HomeScreen() {
           <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-1">
             {[
               { icon: <Plane size={20} />, label: 'Travel', path: '/etravel' },
-              { icon: <HeartPulse size={20} />, label: 'Health', path: '/agencies/philhealth' },
+              { icon: <HeartPulse size={20} />, label: 'Health', path: '/health' },
               { icon: <Briefcase size={20} />, label: 'Jobs', path: '/employment' },
               { icon: <FileWarning size={20} />, label: 'Report', path: '/ereport' },
               { icon: <Sun size={20} />, label: 'Weather', path: '/weather' },
@@ -322,7 +322,7 @@ export function HomeScreen() {
                       <span className="badge-new absolute -top-1 -right-1 text-[9px] px-1 py-0">New</span>
                     )}
                   </div>
-                  <span className={`text-xs font-semibold leading-tight text-center ${locked ? 'text-gray-400' : 'text-text-primary'}`}>
+                  <span className={`text-xs font-semibold leading-tight text-center ${locked ? 'text-text-secondary opacity-70' : 'text-text-primary'}`}>
                     {tile.label}
                   </span>
                 </motion.button>
@@ -348,10 +348,10 @@ export function HomeScreen() {
           </div>
           <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-1">
             {[
-              { name: 'Coron', color: '#0EA5E9', icon: <Palmtree size={32} className="text-white" /> },
-              { name: 'Boracay', color: '#38BDF8', icon: <Waves size={32} className="text-white" /> },
-              { name: 'Siargao', color: '#F59E0B', icon: <Waves size={32} className="text-white" /> }, // Swapped Surfing for Waves (Surfing missing in lucide perhaps, we'll use Waves)
-              { name: 'Batanes', color: '#0284C7', icon: <Wind size={32} className="text-white" /> },
+              { name: 'Coron', color: '#0369A1', icon: <Palmtree size={32} className="text-white" /> },
+              { name: 'Boracay', color: '#0C4A6E', icon: <Waves size={32} className="text-white" /> },
+              { name: 'Siargao', color: '#92400E', icon: <Waves size={32} className="text-white" /> },
+              { name: 'Batanes', color: '#1E3A5F', icon: <Wind size={32} className="text-white" /> },
             ].map(dest => (
               <button
                 key={dest.name}

@@ -23,10 +23,12 @@ export function ConsultationScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [refNumber, setRefNumber] = useState('');
+  const [apiError, setApiError] = useState('');
 
   const handleSubmit = async () => {
     if (!agency || !subject || !message) return;
     setIsLoading(true);
+    setApiError('');
     await new Promise(r => setTimeout(r, 1200));
     const ref = 'CON-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
@@ -35,7 +37,7 @@ export function ConsultationScreen() {
     setIsLoading(false);
     
     if (!ok) {
-      alert('Failed to submit consultation. Please try again.');
+      setApiError('Failed to submit consultation. Please try again.');
       return;
     }
     
@@ -71,6 +73,11 @@ export function ConsultationScreen() {
             <div className="bg-primary-light rounded-lg p-4 text-body-sm text-primary">
               📋 Agencies are required to respond within 15 business days under Republic Act 11032 (ARTA).
             </div>
+            {apiError && (
+              <p className="text-body-sm text-error bg-error/10 rounded-md px-3 py-2" role="alert">
+                {apiError}
+              </p>
+            )}
             <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSubmit} disabled={!agency || !subject || !message}>Submit Concern</Button>
           </>
         ) : (

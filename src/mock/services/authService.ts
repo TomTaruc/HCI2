@@ -147,16 +147,12 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
   // Create a mock OTP challenge
-  // Invalidate any previous pending challenges for this destination
-  const allKeys = db.get<string[]>('__keys__') || [];
-  allKeys.forEach(key => {
-    if (key.startsWith('otpChallenge:')) {
-      const existing = db.get<{ destination: string; purpose: string }>(key);
-      if (existing && existing.destination === canonical && existing.purpose === purpose) {
-        db.remove(key);
-      }
-    }
-  });
+  // Maintain an index of active challenges to reliably invalidate older ones
+  const activeKey = `otpActive:${canonical}:${purpose}`;
+  const existingChallengeId = db.get<string>(activeKey);
+  if (existingChallengeId) {
+    db.remove(`otpChallenge:${existingChallengeId}`);
+  }
 
   const challengeId = `otp-${canonical.replace('+', '')}-${purpose}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const challenge = {
@@ -172,7 +168,12 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
   };
   
   const ok = db.set(`otpChallenge:${challengeId}`, challenge);
-  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to generate OTP challenge. Please try again.');
+  const ok2 = db.set(activeKey, challengeId);
+  if (!ok || !ok2) {
+    db.remove(`otpChallenge:${challengeId}`);
+    db.remove(activeKey);
+    throw new ApiError('STORAGE_ERROR', 'Failed to generate OTP challenge. Please try again.');
+  }
 
   // In a real app, an SMS would be sent here.
   console.info(`[eGovPH DEMO] OTP for ${canonical}: 123456 (demo only, not sent)`);
@@ -185,16 +186,12 @@ export async function requestEmailOTP(email: string, purpose: 'registration' | '
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new ApiError('INVALID_EMAIL', 'Invalid email address.');
 
-  // Invalidate any previous pending challenges
-  const allKeys = db.get<string[]>('__keys__') || [];
-  allKeys.forEach(key => {
-    if (key.startsWith('otpChallenge:')) {
-      const existing = db.get<{ destination: string; purpose: string }>(key);
-      if (existing && existing.destination === normalized && existing.purpose === purpose) {
-        db.remove(key);
-      }
-    }
-  });
+  // Maintain an index of active challenges to reliably invalidate older ones
+  const activeKey = `otpActive:${normalized}:${purpose}`;
+  const existingChallengeId = db.get<string>(activeKey);
+  if (existingChallengeId) {
+    db.remove(`otpChallenge:${existingChallengeId}`);
+  }
 
   const challengeId = `otp-email-${normalized}-${purpose}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   const challenge = {
@@ -210,7 +207,12 @@ export async function requestEmailOTP(email: string, purpose: 'registration' | '
   };
   
   const ok = db.set(`otpChallenge:${challengeId}`, challenge);
-  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to generate OTP challenge. Please try again.');
+  const ok2 = db.set(activeKey, challengeId);
+  if (!ok || !ok2) {
+    db.remove(`otpChallenge:${challengeId}`);
+    db.remove(activeKey);
+    throw new ApiError('STORAGE_ERROR', 'Failed to generate OTP challenge. Please try again.');
+  }
 
   console.info(`[eGovPH DEMO] OTP for ${normalized}: 123456 (demo only, not sent)`);
   return { sent: true, challengeId };
@@ -238,16 +240,20 @@ export async function verifyOTP(
   if (challenge.attempts >= challenge.maxAttempts) throw new ApiError('OTP_MAX_ATTEMPTS', 'Too many incorrect attempts. Please request a new code.');
 
   // Increment attempts
-  const ok1 = db.set(`otpChallenge:${challengeId}`, { ...challenge, attempts: challenge.attempts + 1 });
+  const updatedAttempts = challenge.attempts + 1;
+  const ok1 = db.set(`otpChallenge:${challengeId}`, { ...challenge, attempts: updatedAttempts });
   if (!ok1) throw new ApiError('STORAGE_ERROR', 'Failed to update attempts.');
 
   if (code !== challenge.code) {
     throw new ApiError('OTP_INVALID', 'Incorrect code. Please check and try again.');
   }
 
-  // Mark as verified but not consumed (consumed happens when used for mutation)
-  const ok2 = db.set(`otpChallenge:${challengeId}`, { ...challenge, verified: true });
-  if (!ok2) throw new ApiError('STORAGE_ERROR', 'Failed to verify OTP.');
+  // Mark as verified but not consumed
+  const ok2 = db.set(`otpChallenge:${challengeId}`, { ...challenge, attempts: updatedAttempts, verified: true });
+  if (!ok2) {
+    db.set(`otpChallenge:${challengeId}`, { ...challenge, attempts: updatedAttempts });
+    throw new ApiError('STORAGE_ERROR', 'Failed to verify OTP.');
+  }
   
   return { valid: true };
 }
@@ -264,13 +270,13 @@ export async function register(payload: RegisterPayload): Promise<User> {
     throw new ApiError('INVALID_MPIN', validationError);
   }
 
-  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${payload.challengeId}`);
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean; expiresAt: number }>(`otpChallenge:${payload.challengeId}`);
   if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'registration' || !challenge.verified || challenge.consumed) {
     throw new ApiError('VERIFICATION_REQUIRED', 'Mobile number verification is missing or invalid.');
   }
-
-  // Consume the challenge
-  db.set(`otpChallenge:${payload.challengeId}`, { ...challenge, consumed: true });
+  if (Date.now() > challenge.expiresAt) {
+    throw new ApiError('VERIFICATION_EXPIRED', 'Verification has expired. Please verify again.');
+  }
 
   const users = db.get<User[]>('users') ?? [];
 
@@ -284,6 +290,10 @@ export async function register(payload: RegisterPayload): Promise<User> {
   if (users.find(u => u.email.trim().toLowerCase() === normalizedEmail)) {
     throw new ApiError('DUPLICATE_EMAIL', 'This email address is already registered.');
   }
+
+  // Consume the challenge first to prevent replay
+  const consumeOk = db.set(`otpChallenge:${payload.challengeId}`, { ...challenge, consumed: true });
+  if (!consumeOk) throw new ApiError('STORAGE_ERROR', 'Failed to consume verification proof.');
 
   const newUser: User = {
     id: `user-${Date.now()}`,
@@ -311,7 +321,13 @@ export async function register(payload: RegisterPayload): Promise<User> {
 
   const updated = [...users, newUser];
   const ok = db.set('users', updated);
-  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to save account. Please try again.');
+  if (!ok) {
+    // Rollback consumption so user can retry
+    db.set(`otpChallenge:${payload.challengeId}`, { ...challenge, consumed: false });
+    throw new ApiError('STORAGE_ERROR', 'Failed to save account. Please try again.');
+  }
+
+  db.remove(`otpActive:${canonical}:registration`);
 
   // Generate synthetic PhilSys record so the user can verify their account
   generateSyntheticIdentity(newUser);
@@ -386,9 +402,12 @@ export async function changeEmail(userId: string, newEmail: string, challengeId:
 
   const normalizedEmail = newEmail.trim().toLowerCase();
   
-  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${challengeId}`);
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean; expiresAt: number }>(`otpChallenge:${challengeId}`);
   if (!challenge || challenge.destination !== normalizedEmail || challenge.purpose !== 'update' || !challenge.verified || challenge.consumed) {
     throw new ApiError('VERIFICATION_REQUIRED', 'Email verification is missing or invalid.');
+  }
+  if (Date.now() > challenge.expiresAt) {
+    throw new ApiError('VERIFICATION_EXPIRED', 'Verification has expired. Please verify again.');
   }
 
   const users = db.get<User[]>('users') ?? [];
@@ -401,13 +420,54 @@ export async function changeEmail(userId: string, newEmail: string, challengeId:
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new ApiError('USER_NOT_FOUND', 'User not found.');
 
-  // Consume the challenge
-  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  // Consume the challenge first to prevent replay
+  const consumeOk = db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  if (!consumeOk) throw new ApiError('STORAGE_ERROR', 'Failed to consume verification proof.');
 
   const updated: User = { ...users[idx], email: normalizedEmail, emailVerified: true };
   users[idx] = updated;
   const ok = db.set('users', users);
-  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to save email. Please try again.');
+  if (!ok) {
+    db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: false });
+    throw new ApiError('STORAGE_ERROR', 'Failed to save email. Please try again.');
+  }
+  
+  db.remove(`otpActive:${normalizedEmail}:update`);
+  return updated;
+}
+
+/** Verify the initial registration email for the current account */
+export async function verifyAccountEmail(userId: string, challengeId: string): Promise<User> {
+  await delay(600 + Math.random() * 300);
+
+  const users = db.get<User[]>('users') ?? [];
+  const idx = users.findIndex(u => u.id === userId);
+  if (idx === -1) throw new ApiError('USER_NOT_FOUND', 'User not found.');
+  
+  const user = users[idx];
+  const normalizedEmail = user.email.trim().toLowerCase();
+
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean; expiresAt: number }>(`otpChallenge:${challengeId}`);
+  if (!challenge || challenge.destination !== normalizedEmail || challenge.purpose !== 'registration' || !challenge.verified || challenge.consumed) {
+    throw new ApiError('VERIFICATION_REQUIRED', 'Email verification is missing or invalid.');
+  }
+  if (Date.now() > challenge.expiresAt) {
+    throw new ApiError('VERIFICATION_EXPIRED', 'Verification has expired. Please verify again.');
+  }
+
+  // Consume the challenge first
+  const consumeOk = db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  if (!consumeOk) throw new ApiError('STORAGE_ERROR', 'Failed to consume verification proof.');
+
+  const updated: User = { ...user, emailVerified: true };
+  users[idx] = updated;
+  const ok = db.set('users', users);
+  if (!ok) {
+    db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: false });
+    throw new ApiError('STORAGE_ERROR', 'Failed to update account. Please try again.');
+  }
+  
+  db.remove(`otpActive:${normalizedEmail}:registration`);
   return updated;
 }
 
@@ -418,9 +478,12 @@ export async function changeMobile(userId: string, rawMobile: string, challengeI
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
-  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${challengeId}`);
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean; expiresAt: number }>(`otpChallenge:${challengeId}`);
   if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'update' || !challenge.verified || challenge.consumed) {
     throw new ApiError('VERIFICATION_REQUIRED', 'Mobile verification is missing or invalid.');
+  }
+  if (Date.now() > challenge.expiresAt) {
+    throw new ApiError('VERIFICATION_EXPIRED', 'Verification has expired. Please verify again.');
   }
 
   const users = db.get<User[]>('users') ?? [];
@@ -433,13 +496,19 @@ export async function changeMobile(userId: string, rawMobile: string, challengeI
   const idx = users.findIndex(u => u.id === userId);
   if (idx === -1) throw new ApiError('USER_NOT_FOUND', 'User not found.');
 
-  // Consume the challenge
-  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  // Consume the challenge first to prevent replay
+  const consumeOk = db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  if (!consumeOk) throw new ApiError('STORAGE_ERROR', 'Failed to consume verification proof.');
 
   const updated: User = { ...users[idx], mobileNumber: canonical, mobileVerified: true };
   users[idx] = updated;
   const ok = db.set('users', users);
-  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to save mobile number. Please try again.');
+  if (!ok) {
+    db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: false });
+    throw new ApiError('STORAGE_ERROR', 'Failed to save mobile number. Please try again.');
+  }
+
+  db.remove(`otpActive:${canonical}:update`);
   return updated;
 }
 
@@ -463,9 +532,12 @@ export async function resetMPIN(
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
-  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean }>(`otpChallenge:${challengeId}`);
+  const challenge = db.get<{ destination: string; purpose: string; consumed: boolean; verified?: boolean; expiresAt: number }>(`otpChallenge:${challengeId}`);
   if (!challenge || challenge.destination !== canonical || challenge.purpose !== 'recovery' || !challenge.verified || challenge.consumed) {
     throw new ApiError('VERIFICATION_REQUIRED', 'Recovery verification is missing or invalid.');
+  }
+  if (Date.now() > challenge.expiresAt) {
+    throw new ApiError('VERIFICATION_EXPIRED', 'Verification has expired. Please verify again.');
   }
 
   const users = db.get<User[]>('users') ?? [];
@@ -477,10 +549,16 @@ export async function resetMPIN(
     throw new ApiError('INVALID_MPIN', 'New MPIN cannot be the same as the current one.');
   }
 
-  // Consume the challenge
-  db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  // Consume the challenge first
+  const consumeOk = db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
+  if (!consumeOk) throw new ApiError('STORAGE_ERROR', 'Failed to consume verification proof.');
 
   users[idx] = { ...users[idx], mpinHash: mockHash(newMpin) };
   const ok = db.set('users', users);
-  if (!ok) throw new ApiError('STORAGE_ERROR', 'Failed to reset MPIN. Please try again.');
+  if (!ok) {
+    db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: false });
+    throw new ApiError('STORAGE_ERROR', 'Failed to reset MPIN. Please try again.');
+  }
+
+  db.remove(`otpActive:${canonical}:recovery`);
 }

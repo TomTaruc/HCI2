@@ -5,12 +5,15 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { AppBar } from '../../components/layout/AppBar';
+import { useAuth } from '../../state/AuthContext';
 
 export function ScanQRScreen() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const sessionKey = `scanResult_${user?.id || 'guest'}`;
   const state = location.state as { returnTo?: string; returnParam?: string; title?: string } | null;
-  const [scanResult, setScanResult] = useState<string | null>(() => sessionStorage.getItem('scanResult'));
+  const [scanResult, setScanResult] = useState<string | null>(() => sessionStorage.getItem(sessionKey));
   const [parsedData, setParsedData] = useState<any>(null);
   const [scannerKey, setScannerKey] = useState(0);
   const [cameraError, setCameraError] = useState('');
@@ -33,8 +36,25 @@ export function ScanQRScreen() {
     scanner.render(
       (text) => {
         scanner.clear();
+        let isValid = false;
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.type === 'ePhilID' && parsed.pcn) {
+            isValid = true;
+          }
+        } catch {
+          // not json
+        }
+        
+        if (!isValid) {
+          setCameraError('Unsupported QR content. Please scan a valid National ID (ePhilID) QR code.');
+          setScanResult(null);
+          setScannerKey(k => k + 1);
+          return;
+        }
+
         setScanResult(text);
-        sessionStorage.setItem('scanResult', text);
+        sessionStorage.setItem(sessionKey, text);
       },
       (error: any) => {
         const errMsg = typeof error === 'string' ? error : error?.message || '';
@@ -102,7 +122,7 @@ export function ScanQRScreen() {
                   Use Scanned Data
                 </button>
               ) : null}
-              <button onClick={() => { setScanResult(null); sessionStorage.removeItem('scanResult'); setCameraError(''); setScannerKey(k => k + 1); }} className="px-6 py-3 border border-border rounded-lg text-text-secondary font-medium w-full">
+              <button onClick={() => { setScanResult(null); sessionStorage.removeItem(sessionKey); setCameraError(''); setScannerKey(k => k + 1); }} className="px-6 py-3 border border-border rounded-lg text-text-secondary font-medium w-full">
                 Scan Another
               </button>
             </div>

@@ -15,6 +15,7 @@ export interface SpeedData {
 
 interface ServiceContextType {
   weather: WeatherData | null;
+  weatherError: string | null;
   speed: SpeedData;
   refreshWeather: () => Promise<void>;
   refreshSpeed: () => void;
@@ -24,12 +25,15 @@ const ServiceContext = createContext<ServiceContextType | undefined>(undefined);
 
 export function ServiceProvider({ children }: { children: React.ReactNode }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
   const [speed, setSpeed] = useState<SpeedData>({ downlink: null, rtt: null });
 
   const refreshWeather = async () => {
+    setWeatherError(null);
     try {
       // Quezon City coordinates
       const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=14.6333&longitude=121.0333&current=temperature_2m,is_day,weather_code&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FSingapore');
+      if (!res.ok) throw new Error('Failed to fetch weather data');
       const data = await res.json();
       
       const codes: Record<number, string> = {
@@ -79,9 +83,12 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
           hourly: nextHourly,
           daily: nextDaily,
         });
+      } else {
+        throw new Error('Invalid weather data structure');
       }
     } catch (err) {
       console.error('Failed to fetch weather', err);
+      setWeatherError(err instanceof Error ? err.message : 'Unknown error');
     }
   };
 
@@ -104,7 +111,7 @@ export function ServiceProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <ServiceContext.Provider value={{ weather, speed, refreshWeather, refreshSpeed }}>
+    <ServiceContext.Provider value={{ weather, weatherError, speed, refreshWeather, refreshSpeed }}>
       {children}
     </ServiceContext.Provider>
   );

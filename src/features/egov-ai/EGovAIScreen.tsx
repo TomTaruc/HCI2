@@ -4,14 +4,16 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot } from 'lucide-react';
+import { Send, Bot, Trash2, Key, Settings } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useServices } from '../../state/ServiceContext';
+import { db } from '../../mock/db';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 
 interface Message {
-  id: number;
-  role: 'user' | 'assistant';
+  id: string;
+  role: 'user' | 'model';
   text: string;
 }
 
@@ -23,55 +25,44 @@ const SUGGESTIONS = [
   'Where can I pay SSS online?',
 ];
 
-const RULES: [RegExp, string | (() => string)][] = [
-  [/nbi/i, 'To get an **NBI Clearance**, go to Services → BPESH → Book Appointment → NBI Clearance. You can choose a date and time slot. Bring a valid ID on the day. Processing takes 1–3 business days.'],
-  [/ephilid|national id|digital id/i, 'Your **ePhilID** (Digital National ID) is issued by PhilSys (PSA). To view it, your account must be verified. Go to Mobile ID → ePhilID. It shows your full details and a shareable QR code.'],
-  [/verif/i, 'To **verify your account**, go to Menu → Account → Verify Account. You will need your personal information and your PhilSys Card Number (PCN). The process takes about 5 minutes and includes a quick liveness check.'],
-  [/etravel|travel/i, '**eTravel** is the official electronic travel declaration for all international travelers to/from the Philippines. Go to Services → eTravel, select Inbound or Outbound, and complete the form. No account required.'],
-  [/sss|social security/i, 'You can link your **SSS** account in Agencies → SSS. Once linked, you can view your contribution records, loan balance, and maternity/sickness benefit status.'],
-  [/philhealth/i, 'Link your **PhilHealth** account in Agencies → PhilHealth. You can check your premium payments, MDR, and coverage status.'],
-  [/pagibig|pag-ibig|hdmf/i, '**Pag-IBIG Fund** (HDMF) lets you view your savings and loan accounts. Go to Agencies → Pag-IBIG to link your membership.'],
-  [/mpin|pin/i, 'Your **MPIN** is a 6-digit code you create during registration. If you forgot it, go to Log In → Forgot MPIN. You will verify via OTP and then set a new MPIN.'],
-  [/psa|birth cert/i, 'You can request **PSA documents** (birth, marriage, death certificate) through BPESH → PSA Documents. Delivery options include pickup at a PSA office or mail delivery.'],
-  [/egovpay|pay/i, '**eGovPay** lets you pay government fees like SSS contributions, PhilHealth premiums, BIR taxes, and passport fees. Go to Services → eGovPay and select the payment item.'],
-  [/hello|hi|mabuhay/i, 'Mabuhay! 👋 I\'m the eGov AI Assistant. I can help you navigate eGovPH services, find information, and answer common questions about government transactions. What can I help you with?'],
-  [/help|what can you do/i, 'I can help you with:\n• Navigating eGovPH services\n• Understanding government requirements\n• Finding appointment and payment options\n• Explaining your Digital ID wallet\n\nJust ask me anything!'],
-];
+const INITIAL_MESSAGE: Message = { 
+  id: 'init', 
+  role: 'model', 
+  text: 'Mabuhay! 👋 I\'m the eGov AI Assistant — your guide to Philippine government services. Ask me about ePhilID, NBI Clearance, SSS, PhilHealth, eTravel, and more!' 
+};
 
-function getResponse(input: string, services: ReturnType<typeof useServices>): string {
-  // Dynamic rules based on context
-  if (/weather/i.test(input)) {
-    if (!services.weather) return 'I am currently unable to fetch the weather. Please check the Weather service.';
-    return `The current weather in Quezon City is **${services.weather.temp}°C** and **${services.weather.condition}**.`;
-  }
-  if (/speed|internet/i.test(input)) {
-    if (!services.speed.downlink) return 'I am currently unable to measure your network speed. Try the Speed Test service.';
-    return `Based on your network connection, your estimated download speed is **${services.speed.downlink} Mbps** with a ping of **${services.speed.rtt} ms**.`;
-  }
-
-  for (const [pattern, response] of RULES) {
-    if (pattern.test(input)) {
-      return typeof response === 'function' ? response() : response;
-    }
-  }
-  return "I'm not sure about that specific query. For accurate information, please contact the relevant government agency directly. You can also try searching for the service using the Search button on the Home screen, or use the Consultation form to send a query to an agency.";
-}
-
-let msgId = 0;
+// Provide context to the model about the app
+const SYSTEM_PROMPT = `
+You are the eGovPH AI Assistant, an official digital guide for the Philippine government's single operating system.
+Your job is to assist citizens with navigating government services, understanding requirements, and finding relevant information.
+Keep your answers concise, accurate, and helpful. Use markdown for formatting. 
+Important: If the user asks about something unrelated to government services or the Philippines, politely decline to answer and guide them back to government topics.
+`;
 
 export function EGovAIScreen() {
   const navigate = useNavigate();
   const location = useLocation();
   const services = useServices();
   const state = location.state as { initialPrompt?: string } | null;
-  const [messages, setMessages] = useState<Message[]>([
-    { id: msgId++, role: 'assistant', text: 'Mabuhay! 👋 I\'m the eGov AI Assistant — your guide to Philippine government services. Ask me about ePhilID, NBI Clearance, SSS, PhilHealth, eTravel, and more!' },
-  ]);
+  
+  const [apiKey, setApiKey] = useState(db.get<string>('gemini_api_key') || '');
+  const [showSettings, setShowSettings] = useState(!db.get<string>('gemini_api_key'));
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const saved = db.get<Message[]>('egov_chat_history');
+    return saved && saved.length > 0 ? saved : [INITIAL_MESSAGE];
+  });
+  
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const [initialSent, setInitialSent] = useState(false);
+
+  // Save history
+  useEffect(() => {
+    db.set('egov_chat_history', messages);
+  }, [messages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -89,21 +80,104 @@ export function EGovAIScreen() {
 
   const send = async (text?: string) => {
     const msg = text ?? input.trim();
-    if (!msg) return;
+    if (!msg || !apiKey) return;
     setInput('');
-    const userMsg: Message = { id: msgId++, role: 'user', text: msg };
-    setMessages(m => [...m, userMsg]);
+    
+    const userMsg: Message = { id: Date.now().toString(), role: 'user', text: msg };
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
     setIsTyping(true);
-    await new Promise(r => setTimeout(r, 800 + Math.random() * 500));
-    const response = getResponse(msg, services);
-    setIsTyping(false);
-    setMessages(m => [...m, { id: msgId++, role: 'assistant', text: response }]);
+
+    try {
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash",
+        systemInstruction: SYSTEM_PROMPT
+      });
+
+      // Build chat history for context (excluding the very first placeholder if it's the only one)
+      const history = updatedMessages
+        .filter(m => m.id !== 'init' && m.id !== userMsg.id)
+        .map(m => ({
+          role: m.role,
+          parts: [{ text: m.text }]
+        }));
+
+      const chat = model.startChat({
+        history,
+        generationConfig: { maxOutputTokens: 500 }
+      });
+
+      // Context injection
+      let contextMsg = msg;
+      if (services.weather && msg.toLowerCase().includes('weather')) {
+        contextMsg = `[Context: Current weather in Quezon City is ${services.weather.temp}°C, ${services.weather.condition}]\n\n${msg}`;
+      }
+
+      const result = await chat.sendMessage(contextMsg);
+      const response = result.response.text();
+      
+      setMessages(m => [...m, { id: Date.now().toString(), role: 'model', text: response }]);
+    } catch (error) {
+      console.error(error);
+      setMessages(m => [...m, { 
+        id: Date.now().toString(), 
+        role: 'model', 
+        text: 'Sorry, I encountered an error communicating with the AI service. Please check your API key.' 
+      }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const clearHistory = () => {
+    if (window.confirm('Clear all chat history?')) {
+      setMessages([INITIAL_MESSAGE]);
+    }
+  };
+
+  const saveKey = (key: string) => {
+    setApiKey(key);
+    db.set('gemini_api_key', key);
+    setShowSettings(false);
   };
 
   return (
-    <div className="flex-1 flex flex-col">
-      <AppBar title="eGov AI" showBack />
+    <div className="flex-1 flex flex-col relative">
+      <AppBar title="eGov AI" showBack rightContent={
+        <div className="flex gap-2 mr-2 text-primary">
+          <button onClick={clearHistory} aria-label="Clear Chat"><Trash2 size={20} /></button>
+          <button onClick={() => setShowSettings(!showSettings)} aria-label="Settings"><Settings size={20} /></button>
+        </div>
+      } />
       <div className="bp-stripe" aria-hidden="true" />
+
+      {/* Settings Panel */}
+      {showSettings && (
+        <div className="bg-white border-b border-border p-4 shadow-sm z-10">
+          <h3 className="text-body font-semibold flex items-center gap-2 text-text-primary mb-2">
+            <Key size={16} /> API Settings
+          </h3>
+          <p className="text-body-sm text-text-secondary mb-3">
+            Please provide your Google Gemini API key to enable AI features. Your key is stored locally in your browser.
+          </p>
+          <div className="flex gap-2">
+            <input 
+              type="password"
+              placeholder="AIzaSy..."
+              className="flex-1 border border-border rounded-lg px-3 py-2 text-body-sm focus:border-primary outline-none"
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+            />
+            <button 
+              onClick={() => saveKey(apiKey)}
+              className="bg-primary text-white px-4 py-2 rounded-lg text-body-sm font-semibold"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-bg">
@@ -114,7 +188,7 @@ export function EGovAIScreen() {
             animate={{ opacity: 1, y: 0 }}
             className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            {msg.role === 'assistant' && (
+            {msg.role === 'model' && (
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center shrink-0 mt-0.5">
                 <Bot size={16} className="text-white" />
               </div>

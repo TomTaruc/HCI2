@@ -6,6 +6,7 @@ import { Sun, Cloud, CloudRain, CloudLightning, CloudSnow, CloudFog, CloudDrizzl
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { useServices } from '../../state/ServiceContext';
+import { Button } from '../../components/ui/Button';
 
 const ADVISORIES = [
   { level: 'warning', title: 'INTERTROPICAL CONVERGENCE ZONE', body: 'Affecting eastern portions of the Visayas and Mindanao. Residents are advised to take precautionary measures.' },
@@ -26,8 +27,26 @@ export function getWeatherIcon(code: number, className = "text-white") {
 }
 
 export function WeatherScreen() {
-  const { weather, refreshWeather } = useServices();
+  const { weather, weatherError, refreshWeather } = useServices();
   
+  if (weatherError && !weather) {
+    return (
+      <div className="flex-1 flex flex-col bg-bg">
+        <AppBar title="Weather" showBack />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+          <div className="w-16 h-16 bg-error/10 text-error rounded-full flex items-center justify-center">
+            <CloudRain size={32} />
+          </div>
+          <div>
+            <h2 className="text-h2 font-bold text-text-primary">Unable to load weather</h2>
+            <p className="text-body text-text-secondary mt-1">{weatherError}</p>
+          </div>
+          <Button variant="primary" onClick={refreshWeather}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!weather) {
     return (
       <div className="flex-1 flex flex-col">

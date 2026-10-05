@@ -12,6 +12,7 @@ import { CardSkeleton, ErrorState, Badge } from '../../components/ui/Card';
 import { getAgencies, getCategories } from '../../mock/services/agencyService';
 import type { Agency } from '../../mock/services/agencyService';
 import { useAuth } from '../../state/AuthContext';
+import { ASSETS } from '../../assets/manifest';
 
 export function NGAsDirectoryScreen() {
   const navigate = useNavigate();
@@ -128,13 +129,17 @@ export function NGAsDirectoryScreen() {
               className="w-full bg-white rounded-lg border border-border p-4 flex items-center gap-3 text-left hover:shadow-card-hover hover:border-primary/20 transition-all active:scale-[0.99]"
               aria-label={`${agency.name}${!isVerified ? ' — requires verification' : ''}`}
             >
-              {/* Logo placeholder */}
+              {/* Logo */}
               <div
-                className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0"
-                style={{ backgroundColor: agency.logoColor }}
+                className="w-11 h-11 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0 border border-border shadow-sm p-1 bg-white"
+                style={{ backgroundColor: ASSETS.logos[agency.id as keyof typeof ASSETS.logos] ? 'white' : agency.logoColor }}
                 aria-hidden="true"
               >
-                {agency.logoLetter}
+                {ASSETS.logos[agency.id as keyof typeof ASSETS.logos] ? (
+                  <img src={ASSETS.logos[agency.id as keyof typeof ASSETS.logos]} alt={agency.shortName} className="w-full h-full object-contain" />
+                ) : (
+                  agency.logoLetter
+                )}
               </div>
 
               <div className="flex-1 min-w-0">

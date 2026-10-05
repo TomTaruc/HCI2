@@ -3,7 +3,7 @@
  * Inbound / Outbound traveler declaration form
  */
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plane, CheckCircle } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
@@ -12,11 +12,13 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
 import { useAuth } from '../../state/AuthContext';
+import { createPendingPayment } from '../../mock/services/paymentService';
 
 type Stage = 'type' | 'personal' | 'travel' | 'health' | 'done';
 
 export function ETravelScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [stage, setStage] = useState<Stage>('type');
   const [travelType, setTravelType] = useState<'inbound' | 'outbound'>('inbound');
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +37,22 @@ export function ETravelScreen() {
 
   const { user } = useAuth();
 
+  // Handle return from eGovPay
+  React.useEffect(() => {
+    const state = location.state as { paymentSuccess?: boolean; paymentId?: string };
+    if (state?.paymentSuccess && state?.paymentId && stage !== 'done') {
+      const list = db.get<any[]>('etravelDeclarations') ?? [];
+      const p = list.find(a => a.id === state.paymentId);
+      if (p) {
+        setRefNumber(p.paymentRef || p.id);
+        setTravelType(p.travelType);
+        setStage('done');
+        // Clear state so we don't trigger it again on reload
+        navigate('.', { replace: true, state: {} });
+      }
+    }
+  }, [location.state, navigate, stage]);
+
   const handleSubmit = async () => {
     setIsLoading(true);
     await new Promise(r => setTimeout(r, 1500));
@@ -51,7 +69,17 @@ export function ETravelScreen() {
       return;
     }
     
-    setStage('done');
+    // Redirect to eGovPay for payment (Travel Tax)
+    createPendingPayment({
+      id: ref,
+      userId: user?.id || 'guest',
+      sourceService: 'eTravel',
+      amount: travelType === 'outbound' ? 1620 : 0,
+      description: travelType === 'outbound' ? 'Travel Tax' : 'eTravel Processing',
+      returnTo: '/etravel'
+    });
+    
+    navigate('/egovpay', { state: { pendingPaymentId: ref } });
   };
 
   return (

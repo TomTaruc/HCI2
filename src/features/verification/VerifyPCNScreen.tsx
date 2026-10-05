@@ -254,8 +254,8 @@ export function VerifyPCNScreen() {
               </p>
             )}
             {user && !['user-unverified-01', 'user-verified-01'].includes(user.id) && (
-              <p className="text-body-sm text-text-secondary">
-                No sample PCN is pre-configured for newly registered accounts. This screen demonstrates the verification flow.
+              <p className="text-body-sm text-text-primary">
+                {user.fullName}: <code className="font-mono bg-white/60 px-1 rounded">{getDemoPCN(user.id)}</code>
               </p>
             )}
             <p className="text-body-sm text-text-secondary mt-1">

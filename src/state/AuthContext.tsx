@@ -91,6 +91,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     db.remove('sessionStatus');
     db.remove('sessionLoginAt');
     db.remove('sessionLastActive');
+    try {
+      sessionStorage.removeItem('verify_personal');
+      sessionStorage.removeItem('verify_pcn');
+      sessionStorage.removeItem('scanResult');
+      sessionStorage.removeItem('reg_mobile');
+      sessionStorage.removeItem('reg_otp_challenge');
+      sessionStorage.removeItem('reg_profile');
+      sessionStorage.removeItem('reg_mpin');
+    } catch {
+      // ignore
+    }
   }
 
   const resetIdleTimer = useCallback(() => {
@@ -110,12 +121,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserState(null);
       setSessionStatus('idle');
       _clearSession();
-      try {
-        sessionStorage.removeItem('verify_personal');
-        sessionStorage.removeItem('verify_pcn');
-      } catch {
-        // ignore
-      }
       return;
     }
 
@@ -213,16 +218,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === 'egov_currentUserId' && e.newValue === null) {
-        // Another tab logged out
-        clearIdleTimer();
-        setUserState(null);
-        setSessionStatus('idle');
+      if (e.key === 'egov_currentUserId') {
+        sessionGenRef.current += 1;
+        if (e.newValue === null) {
+          // Another tab logged out
+          clearIdleTimer();
+          setUserState(null);
+          setSessionStatus('idle');
+          _clearSession();
+        } else {
+          // Another tab logged in as a different user or restored session
+          const freshId = e.newValue.replace(/"/g, '');
+          const freshUser = getUserById(freshId);
+          if (freshUser && freshUser.id !== user?.id) {
+            clearIdleTimer();
+            setUserState(freshUser);
+            setSessionStatus(db.get<SessionStatus>('sessionStatus') || 'unlocked');
+            if (db.get<SessionStatus>('sessionStatus') === 'unlocked') {
+              resetIdleTimer();
+            }
+          }
+        }
+      } else if (e.key === 'egov_sessionStatus' && user) {
+        if (e.newValue === '"locked"') {
+          setSessionStatus('locked');
+          clearIdleTimer();
+        } else if (e.newValue === '"unlocked"') {
+          setSessionStatus('unlocked');
+          resetIdleTimer();
+        }
       }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, [clearIdleTimer]);
+  }, [clearIdleTimer, resetIdleTimer, user]);
 
   // ----------------------------------------------------------------
   // Helpers
@@ -232,14 +261,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const now = Date.now();
     
     // Check if persistence works
-    const ok = db.set('currentUserId', loggedInUser.id);
-    if (!ok) {
+    const ok1 = db.set('currentUserId', loggedInUser.id);
+    const ok2 = db.set('sessionStatus', 'unlocked');
+    const ok3 = db.set('sessionLoginAt', now);
+    const ok4 = db.set('sessionLastActive', now);
+    
+    if (!ok1 || !ok2 || !ok3 || !ok4) {
+      _clearSession();
       console.error('[eGovPH] Session establishment failed (storage unavailable)');
       return false;
     }
-    db.set('sessionStatus', 'unlocked');
-    db.set('sessionLoginAt', now);
-    db.set('sessionLastActive', now);
 
     setUserState(loggedInUser);
     setSessionStatus('unlocked');
@@ -267,13 +298,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUserState(null);
     setSessionStatus('idle');
     _clearSession();
-    // Clear any in-flight session drafts
-    try {
-      sessionStorage.removeItem('verify_personal');
-      sessionStorage.removeItem('verify_pcn');
-    } catch {
-      // ignore
-    }
   }, [clearIdleTimer]);
 
   /**

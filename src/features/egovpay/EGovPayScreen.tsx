@@ -11,6 +11,8 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { db } from '../../mock/db';
 import { useAuth } from '../../state/AuthContext';
+import { useLocation } from 'react-router-dom';
+import { getPendingPayment, processPayment, cancelPendingPayment, type PendingPayment } from '../../mock/services/paymentService';
 
 const PAYMENT_ITEMS = [
   { id: 'sss-contrib', label: 'SSS Contribution', agency: 'SSS', amount: 1125.00 },
@@ -23,7 +25,21 @@ const PAYMENT_ITEMS = [
 
 export function EGovPayScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
+  
+  const pendingId = (location.state as { pendingPaymentId?: string })?.pendingPaymentId;
+  const [pendingItem, setPendingItem] = useState<PendingPayment | null>(null);
+
+  React.useEffect(() => {
+    if (pendingId && user) {
+      const item = getPendingPayment(user.id, pendingId);
+      if (item && item.status === 'pending') {
+        setPendingItem(item);
+      }
+    }
+  }, [pendingId, user]);
+
   const [selected, setSelected] = useState<typeof PAYMENT_ITEMS[0] | null>(null);
   const [payMethod, setPayMethod] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +50,20 @@ export function EGovPayScreen() {
   const handlePay = async () => {
     setIsLoading(true);
     setError('');
+    
+    if (pendingItem && user) {
+      try {
+        const ref = await processPayment(user.id, pendingItem.id, payMethod);
+        setRefNumber(ref);
+        setDone(true);
+      } catch (err: any) {
+        setError(err.message || 'Payment failed.');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     await new Promise(r => setTimeout(r, 1500));
     const ref = 'PAY-' + Date.now().toString(36).toUpperCase();
     
@@ -71,8 +101,16 @@ export function EGovPayScreen() {
             </div>
             <p className="text-body-sm text-text-secondary">This is a simulated payment for research purposes. No real money was charged.</p>
             <div className="flex gap-3 w-full">
-              <Button variant="outline" fullWidth onClick={() => { setDone(false); setSelected(null); setPayMethod(''); }}>Pay Another</Button>
-              <Button variant="primary" fullWidth onClick={() => navigate('/home')}>Go Home</Button>
+              { pendingItem ? (
+                <Button variant="primary" fullWidth onClick={() => navigate(pendingItem.returnTo, { state: { paymentSuccess: true, paymentId: pendingItem.id } })}>
+                  Return to {pendingItem.sourceService === 'eTravel' ? 'eTravel' : 'Appointments'}
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" fullWidth onClick={() => { setDone(false); setSelected(null); setPayMethod(''); }}>Pay Another</Button>
+                  <Button variant="primary" fullWidth onClick={() => navigate('/home')}>Go Home</Button>
+                </>
+              )}
             </div>
           </motion.div>
         </ScreenContainer>
@@ -80,9 +118,16 @@ export function EGovPayScreen() {
     );
   }
 
+  const handleCancelPending = () => {
+    if (pendingItem && user) {
+      cancelPendingPayment(user.id, pendingItem.id);
+      navigate(pendingItem.returnTo);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col">
-      <AppBar title="eGovPay" showBack />
+      <AppBar title="eGovPay" showBack onBack={pendingItem ? handleCancelPending : undefined} />
       <div className="bp-stripe" aria-hidden="true" />
       <ScreenContainer className="pt-4 gap-5">
         <div className="flex items-center gap-3">
@@ -99,27 +144,44 @@ export function EGovPayScreen() {
           </p>
         </div>
 
-        <div>
-          <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Select Payment</p>
-          <div className="flex flex-col gap-2">
-            {PAYMENT_ITEMS.map(item => (
-              <button key={item.id} onClick={() => setSelected(selected?.id === item.id ? null : item)}
-                className={`w-full border rounded-lg p-4 text-left transition-all ${selected?.id === item.id ? 'border-primary bg-primary-light' : 'border-border bg-white hover:shadow-card-hover'}`}>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-body font-semibold text-text-primary">{item.label}</p>
-                    <p className="text-body-sm text-text-secondary">{item.agency}</p>
-                  </div>
-                  <p className="text-body font-bold text-text-primary">
-                    ₱{item.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
-                  </p>
+        {pendingItem ? (
+          <div>
+            <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Pending Payment</p>
+            <div className="w-full border border-primary bg-primary-light rounded-lg p-4 text-left">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-body font-semibold text-text-primary">{pendingItem.description}</p>
+                  <p className="text-body-sm text-text-secondary">Ref: {pendingItem.id}</p>
                 </div>
-              </button>
-            ))}
+                <p className="text-body font-bold text-text-primary">
+                  ₱{pendingItem.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Select Payment</p>
+            <div className="flex flex-col gap-2">
+              {PAYMENT_ITEMS.map(item => (
+                <button key={item.id} onClick={() => setSelected(selected?.id === item.id ? null : item)}
+                  className={`w-full border rounded-lg p-4 text-left transition-all ${selected?.id === item.id ? 'border-primary bg-primary-light' : 'border-border bg-white hover:shadow-card-hover'}`}>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-body font-semibold text-text-primary">{item.label}</p>
+                      <p className="text-body-sm text-text-secondary">{item.agency}</p>
+                    </div>
+                    <p className="text-body font-bold text-text-primary">
+                      ₱{item.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {selected && (
+        {(selected || pendingItem) && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="flex flex-col gap-4">
             <div>
               <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Payment Method</p>
@@ -138,7 +200,7 @@ export function EGovPayScreen() {
               </div>
             )}
             <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handlePay} disabled={!payMethod}>
-              Pay ₱{selected.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+              Pay ₱{(pendingItem?.amount ?? selected?.amount ?? 0).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
             </Button>
           </motion.div>
         )}

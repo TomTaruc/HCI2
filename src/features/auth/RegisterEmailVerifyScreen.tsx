@@ -10,7 +10,7 @@ import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { useAuth } from '../../state/AuthContext';
 import { db } from '../../mock/db';
-import { requestEmailOTP, verifyOTP, type User } from '../../mock/services/authService';
+import { requestEmailOTP, verifyOTP, verifyAccountEmail, type User } from '../../mock/services/authService';
 import { Button } from '../../components/ui/Button';
 import { OTPInput } from '../../components/ui/Input';
 
@@ -26,15 +26,19 @@ export function RegisterEmailVerifyScreen() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Cancel stale completion on unmount
   useEffect(() => {
+    let active = true;
     if (email) {
       requestEmailOTP(email, 'registration')
-        .then(res => setChallengeId(res.challengeId))
-        .catch(err => setError(err.message || 'Failed to send OTP'));
+        .then(res => { if (active) setChallengeId(res.challengeId); })
+        .catch(err => { if (active) setError(err.message || 'Failed to send OTP'); });
     }
+    return () => { active = false; };
   }, [email]);
 
   const handleVerify = async (value?: string) => {
+    if (isLoading) return; // Prevent duplicate submissions
     const code = value ?? otp;
     if (code.length !== 6) {
       setError('Enter all 6 digits.');
@@ -45,19 +49,8 @@ export function RegisterEmailVerifyScreen() {
     try {
       const { valid } = await verifyOTP(challengeId, code);
       if (valid && user) {
-        const users = db.get<User[]>('users') ?? [];
-        const idx = users.findIndex(u => u.id === user.id);
-        if (idx !== -1) {
-          users[idx].emailVerified = true;
-          const ok = db.set('users', users);
-          if (!ok) throw new Error('Storage error');
-          
-          const challenge = db.get<{ consumed: boolean }>(`otpChallenge:${challengeId}`);
-          if (challenge) {
-            db.set(`otpChallenge:${challengeId}`, { ...challenge, consumed: true });
-          }
-          await refreshUser();
-        }
+        await verifyAccountEmail(user.id, challengeId);
+        await refreshUser();
       }
       navigate('/home', { replace: true });
     } catch (err: any) {
@@ -102,7 +95,7 @@ export function RegisterEmailVerifyScreen() {
 
           <div className="bg-primary-light rounded-lg px-4 py-3 w-full text-left">
             <p className="text-body-sm text-primary font-medium">
-              📧 Demo mode: The code is <strong>123456</strong>
+              📧 Demo mode: The simulated code is <strong>123456</strong>
             </p>
           </div>
 

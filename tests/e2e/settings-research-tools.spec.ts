@@ -1,21 +1,22 @@
+import { navigateTo, getExpectedUrl } from './utils/nav';
 import { test, expect } from '@playwright/test';
 
 test.describe('Settings & Research Tools', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
     // Login as verified user
-    await page.goto('/welcome');
+    await navigateTo(page, '/welcome');
     await page.locator('button:has-text("Log In")').click();
-    await page.fill('input[type="tel"]', '09171234567');
+    await page.fill('input[type="tel"]', '9171234567');
     await page.locator('button:has-text("Continue")').click();
     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
     await expect(page.locator('text=Juan!')).toBeVisible();
   });
 
   test('SET-01: Disclaimer is present in About screen', async ({ page }) => {
-    await page.goto('/account');
+    await navigateTo(page, '/account');
     await page.locator('button', { hasText: 'About eGovPH' }).click();
     
     await expect(page.locator('text=DISCLAIMER: ACADEMIC PROTOTYPE ONLY')).toBeVisible();
@@ -23,7 +24,7 @@ test.describe('Settings & Research Tools', () => {
   });
 
   test('SET-03: Reset Demo Data completely wipes state', async ({ page }) => {
-    await page.goto('/account/research-tools');
+    await navigateTo(page, '/account/research-tools');
     
     // Override window.confirm to always return true
     page.on('dialog', dialog => dialog.accept());
@@ -39,7 +40,7 @@ test.describe('Settings & Research Tools', () => {
   });
 
   test('SET-04: Instant Verify toggle works', async ({ page }) => {
-    await page.goto('/account/research-tools');
+    await navigateTo(page, '/account/research-tools');
     page.on('dialog', dialog => dialog.accept());
     await page.locator('button:has-text("Toggle Instant Verify")').click();
     

@@ -52,6 +52,18 @@ import { IDQRShareScreen } from './features/mobile-id/IDQRShareScreen';
 import { NGAsDirectoryScreen } from './features/agencies/NGAsDirectoryScreen';
 import { AgencyDetailScreen } from './features/agencies/AgencyDetailScreen';
 import { LGUScreen } from './features/agencies/LGUScreen';
+import { ServiceDetailScreen } from './features/agencies/ServiceDetailScreen';
+
+// Health / PhilHealth
+import { HealthScreen } from './features/health/HealthScreen';
+import { PhilHealthMembershipScreen } from './features/health/PhilHealthMembershipScreen';
+import { PhilHealthContributionScreen } from './features/health/PhilHealthContributionScreen';
+import { PhilHealthClaimsScreen } from './features/health/PhilHealthClaimsScreen';
+import { PhilHealthFacilitiesScreen } from './features/health/PhilHealthFacilitiesScreen';
+
+// Additional Services
+import { SIMRegistrationScreen } from './features/sim/SIMRegistrationScreen';
+import { StartupScreen } from './features/startup/StartupScreen';
 
 // Services Hub
 import { ServicesHubScreen } from './features/services/ServicesHubScreen';
@@ -176,8 +188,14 @@ export function App() {
 
         {/* NGAs / Agencies — Flow C */}
         <Route path="/agencies" element={<ProtectedRoute><NGAsDirectoryScreen /></ProtectedRoute>} />
+        <Route path="/agencies/philhealth/services/membership" element={<ProtectedRoute><PhilHealthMembershipScreen /></ProtectedRoute>} />
+        <Route path="/agencies/philhealth/services/contribution" element={<ProtectedRoute><PhilHealthContributionScreen /></ProtectedRoute>} />
+        <Route path="/agencies/philhealth/services/claims" element={<ProtectedRoute><PhilHealthClaimsScreen /></ProtectedRoute>} />
+        <Route path="/agencies/philhealth/services/facilities" element={<ProtectedRoute><PhilHealthFacilitiesScreen /></ProtectedRoute>} />
         <Route path="/agencies/:agencyId" element={<ProtectedRoute><AgencyDetailScreen /></ProtectedRoute>} />
+        <Route path="/agencies/:agencyId/services/:serviceId" element={<ProtectedRoute><ServiceDetailScreen /></ProtectedRoute>} />
         <Route path="/lgu" element={<ProtectedRoute><LGUScreen /></ProtectedRoute>} />
+        <Route path="/health" element={<ProtectedRoute><HealthScreen /></ProtectedRoute>} />
 
         {/* Services Hub */}
         <Route path="/services" element={<ProtectedRoute><ServicesHubScreen /></ProtectedRoute>} />
@@ -192,6 +210,8 @@ export function App() {
         <Route path="/weather" element={<ProtectedRoute><WeatherScreen /></ProtectedRoute>} />
         <Route path="/speedtest" element={<ProtectedRoute><SpeedTestScreen /></ProtectedRoute>} />
         <Route path="/scan" element={<ProtectedRoute><ScanQRScreen /></ProtectedRoute>} />
+        <Route path="/sim-registration" element={<ProtectedRoute><SIMRegistrationScreen /></ProtectedRoute>} />
+        <Route path="/startup" element={<ProtectedRoute><StartupScreen /></ProtectedRoute>} />
 
         {/* Account */}
         <Route path="/account" element={<ProtectedRoute><AccountScreen /></ProtectedRoute>} />

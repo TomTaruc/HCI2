@@ -1,8 +1,9 @@
+import { navigateTo, getExpectedUrl } from './utils/nav';
 import { test, expect } from '@playwright/test';
 
 test.describe('Responsive Layout', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
   });
 
   const viewports = [
@@ -16,7 +17,7 @@ test.describe('Responsive Layout', () => {
   for (const vp of viewports) {
     test(`Home renders without horizontal scroll at ${vp.name} (${vp.width}x${vp.height})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
-      await page.goto('/welcome');
+      await navigateTo(page, '/welcome');
       
       // Check horizontal scroll
       const hasHorizontalScroll = await page.evaluate(() => {

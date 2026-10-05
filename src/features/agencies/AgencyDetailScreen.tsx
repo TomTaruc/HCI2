@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Building2, RotateCcw } from 'lucide-react';
+import { Building2, RotateCcw, ChevronRight } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card, CardSkeleton, EmptyState, ErrorState, Badge } from '../../components/ui/Card';
@@ -17,12 +17,14 @@ import { useAuth } from '../../state/AuthContext';
 import { getAgencyById, getContributions, linkAgencyAccount } from '../../mock/services/agencyService';
 import type { Agency, Contribution } from '../../mock/services/agencyService';
 import { db } from '../../mock/db';
+import { getServicesByAgency } from '../../registry/services';
 
 type Tab = 'overview' | 'records' | 'support';
 
 export function AgencyDetailScreen() {
   const { agencyId } = useParams<{ agencyId: string }>();
   const navigate = useNavigate();
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const { user } = useAuth();
 
   const [agency, setAgency] = useState<Agency | null>(null);
@@ -226,7 +228,23 @@ export function AgencyDetailScreen() {
               <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider px-2 mb-2">
                 Available Services
               </p>
-              {agency.services.map(service => (
+              {getServicesByAgency(agency.id).map(service => (
+                <button 
+                  key={service.id} 
+                  onClick={() => navigate(service.route)}
+                  className="w-full flex items-center justify-between px-2 py-3 hover:bg-bg rounded-lg transition-colors text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-primary text-xl" aria-hidden="true">•</span>
+                    <div>
+                      <span className="text-body font-medium text-text-primary block">{service.title}</span>
+                      <span className="text-body-sm text-text-secondary block">{service.description}</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={18} className="text-text-secondary" />
+                </button>
+              ))}
+              {getServicesByAgency(agency.id).length === 0 && agency.services.map(service => (
                 <div key={service} className="flex items-center gap-2 px-2 py-2 hover:bg-bg rounded-lg transition-colors">
                   <span className="text-primary" aria-hidden="true">•</span>
                   <span className="text-body text-text-primary">{service}</span>
@@ -336,21 +354,41 @@ export function AgencyDetailScreen() {
 
             <Card className="flex flex-col gap-3">
               <h2 className="text-h2 font-semibold text-text-primary">Frequently Asked Questions</h2>
-              {[
-                `How do I check my ${agency.shortName} contributions?`,
-                `What are the benefits of being a ${agency.shortName} member?`,
-                `How do I apply for a ${agency.shortName} loan?`,
-                `What documents do I need for ${agency.shortName} claims?`,
-              ].map(q => (
-                <button 
-                  key={q} 
-                  onClick={() => navigate('/egov-ai', { state: { initialPrompt: q } })}
-                  className="flex items-start gap-2 text-left hover:text-primary transition-colors"
-                >
-                  <span className="text-primary mt-0.5" aria-hidden="true">?</span>
-                  <span className="text-body-sm text-text-primary">{q}</span>
-                </button>
-              ))}
+              <div className="flex flex-col gap-2">
+                {[
+                  {
+                    q: `How do I check my ${agency.shortName} contributions?`,
+                    a: `You can check your contributions by linking your account in the Overview tab, then viewing the Records tab for a full history of your posted contributions.`
+                  },
+                  {
+                    q: `What are the benefits of being a ${agency.shortName} member?`,
+                    a: `Members are entitled to various benefits depending on the agency, such as loans, health insurance, and retirement pensions. Please check the official portal for specific details.`
+                  },
+                  {
+                    q: `How do I apply for a ${agency.shortName} loan?`,
+                    a: `Loan applications are processed through the official agency portal. You will need an active account and sufficient contributions to qualify.`
+                  },
+                  {
+                    q: `What documents do I need for ${agency.shortName} claims?`,
+                    a: `Required documents typically include a valid ID, proof of contribution, and specific claim forms. See the Services tab for direct links to claim requirements.`
+                  },
+                ].map(({ q, a }) => (
+                  <div key={q} className="border border-border rounded-lg overflow-hidden">
+                    <button 
+                      onClick={() => setExpandedFaq(expandedFaq === q ? null : q)}
+                      className="w-full flex items-center justify-between p-3 text-left hover:bg-bg transition-colors"
+                    >
+                      <span className="text-body-sm text-text-primary font-medium">{q}</span>
+                      <span className="text-primary text-xl ml-2">{expandedFaq === q ? '−' : '+'}</span>
+                    </button>
+                    {expandedFaq === q && (
+                      <div className="p-3 bg-bg border-t border-border">
+                        <p className="text-body-sm text-text-secondary">{a}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Card>
 
             <Button

@@ -26,11 +26,13 @@ export function PSADocumentScreen() {
   const [address, setAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [refNumber, setRefNumber] = useState('');
+  const [apiError, setApiError] = useState('');
 
   const { user } = useAuth();
 
   const handleSubmit = async () => {
     setIsLoading(true);
+    setApiError('');
     await new Promise(r => setTimeout(r, 1500));
     const ref = 'PSA-' + Date.now().toString(36).toUpperCase();
     setRefNumber(ref);
@@ -39,7 +41,7 @@ export function PSADocumentScreen() {
     setIsLoading(false);
     
     if (!ok) {
-      alert('Failed to submit request. Please try again.');
+      setApiError('Failed to submit request. Please try again.');
       return;
     }
     
@@ -140,6 +142,11 @@ export function PSADocumentScreen() {
                   </div>
                 ))}
               </div>
+              {apiError && (
+                <p className="text-body-sm text-error bg-error/10 rounded-md px-3 py-2 mt-2" role="alert">
+                  {apiError}
+                </p>
+              )}
               <div className="flex flex-col gap-3 mt-2">
                 <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSubmit}>Submit Request</Button>
                 <Button variant="ghost" fullWidth onClick={() => setStage('details')}>Edit</Button>

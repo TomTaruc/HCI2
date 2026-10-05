@@ -1,23 +1,24 @@
+import { navigateTo, getExpectedUrl } from './utils/nav';
 import { test, expect } from '@playwright/test';
 
 test.describe('Tier 2 Features - BPESH & eTravel', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
     // Login
-    await page.goto('/welcome');
+    await navigateTo(page, '/welcome');
     await page.locator('button:has-text("Log In")').click();
-    await page.fill('input[type="tel"]', '09171234567');
+    await page.fill('input[type="tel"]', '9171234567');
     await page.locator('button:has-text("Continue")').click();
     await expect(page.locator('text=/Enter your 6-digit MPIN/')).toBeVisible();
     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
-    await page.waitForURL('**/home', { timeout: 15000 });
+    await page.waitForURL(getExpectedUrl('/home'), { timeout: 15000 });
     await expect(page.locator('text=Mabuhay')).toBeVisible({ timeout: 15000 });
   });
 
   test('BPESH-01, 03, 04: NBI Clearance Appointment', async ({ page }) => {
-    await page.goto('/bpesh/appointment');
+    await navigateTo(page, '/bpesh/appointment');
     
     // Select Service
     await page.locator('button:has-text("NBI Clearance")').click();
@@ -44,7 +45,7 @@ test.describe('Tier 2 Features - BPESH & eTravel', () => {
   });
 
   test('ETRV-01: eTravel Form', async ({ page }) => {
-    await page.goto('/etravel');
+    await navigateTo(page, '/etravel');
     
     // Type
     await page.locator('button:has-text("inbound Traveler")').click();
@@ -68,10 +69,10 @@ test.describe('Tier 2 Features - BPESH & eTravel', () => {
   });
 
   test('ETRV-02: eTravel accessible logged out', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
-    await page.goto('/etravel');
+    await navigateTo(page, '/etravel');
     await expect(page.locator('text=eTravel Declaration')).toBeVisible();
   });
 });

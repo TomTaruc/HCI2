@@ -6,33 +6,35 @@ import { useNavigate } from 'react-router-dom';
 import { Search, ArrowRight, X } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
+import { getAllServices } from '../../registry/services';
 
-const ALL_SERVICES = [
+const ADDITIONAL_SEARCH_ITEMS = [
   { name: 'NBI Clearance Appointment', path: '/bpesh/appointment', category: 'BPESH', hint: 'Book NBI clearance online' },
   { name: 'PSA Birth Certificate', path: '/bpesh/psa', category: 'BPESH', hint: 'Request official PSA documents' },
-  { name: 'eTravel Declaration', path: '/etravel', category: 'Travel', hint: 'Electronic travel declaration' },
-  { name: 'SSS Contributions', path: '/agencies/sss', category: 'Agencies', hint: 'View SSS records' },
-  { name: 'PhilHealth Membership', path: '/agencies/philhealth', category: 'Agencies', hint: 'View PhilHealth records' },
-  { name: 'Pag-IBIG Fund', path: '/agencies/pagibig', category: 'Agencies', hint: 'View Pag-IBIG records' },
   { name: 'Digital National ID', path: '/mobile-id/ePhilID', category: 'Mobile ID', hint: 'View your ePhilID' },
   { name: 'eDriver\'s License', path: '/mobile-id/eDL', category: 'Mobile ID', hint: 'View your digital license' },
-  { name: 'Weather', path: '/weather', category: 'Services', hint: 'Current weather and alerts' },
-  { name: 'Speed Test', path: '/speedtest', category: 'Services', hint: 'Test your internet speed' },
-  { name: 'eReport', path: '/ereport', category: 'Services', hint: 'File an incident report' },
-  { name: 'eGovPay', path: '/egovpay', category: 'Services', hint: 'Pay government fees' },
-  { name: 'DOLE Job Search', path: '/employment', category: 'Employment', hint: 'Find government-listed jobs' },
-  { name: 'Consultation Services', path: '/consultation', category: 'Services', hint: 'Contact a government agency' },
-  { name: 'eGov AI Assistant', path: '/egov-ai', category: 'Services', hint: 'Ask about government services' },
   { name: 'Tourism Destinations', path: '/home/tourism', category: 'Tourism', hint: 'Explore Philippine destinations' },
   { name: 'LGU Services', path: '/lgu', category: 'LGU', hint: 'Local government services' },
 ];
+
+function getSearchCorpus() {
+  const registryItems = getAllServices().map(s => ({
+    name: s.title,
+    path: s.route,
+    category: s.category,
+    hint: s.description
+  }));
+  return [...ADDITIONAL_SEARCH_ITEMS, ...registryItems];
+}
 
 export function SearchScreen() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
 
+  const searchCorpus = React.useMemo(() => getSearchCorpus(), []);
+
   const results = query.length > 1
-    ? ALL_SERVICES.filter(s =>
+    ? searchCorpus.filter(s =>
         s.name.toLowerCase().includes(query.toLowerCase()) ||
         s.category.toLowerCase().includes(query.toLowerCase()) ||
         s.hint.toLowerCase().includes(query.toLowerCase())

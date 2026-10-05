@@ -1,23 +1,24 @@
+import { navigateTo, getExpectedUrl } from './utils/nav';
 import { test, expect } from '@playwright/test';
 
 test.describe('Tier 2 Features - Others', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
     // Login
-    await page.goto('/welcome');
+    await navigateTo(page, '/welcome');
     await page.locator('button:has-text("Log In")').click();
-    await page.fill('input[type="tel"]', '09171234567');
+    await page.fill('input[type="tel"]', '9171234567');
     await page.locator('button:has-text("Continue")').click();
     await expect(page.locator('text=/Enter your 6-digit MPIN/')).toBeVisible();
     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
-    await page.waitForURL('**/home', { timeout: 15000 });
+    await page.waitForURL(getExpectedUrl('/home'), { timeout: 15000 });
     await expect(page.locator('text=Mabuhay')).toBeVisible({ timeout: 15000 });
   });
 
   test('CONS-01: Consultation Form', async ({ page }) => {
-    await page.goto('/consultation');
+    await navigateTo(page, '/consultation');
     await page.selectOption('select', 'SSS');
     await page.fill('input[placeholder="Brief description of your concern"]', 'Test Subject');
     await page.fill('textarea', 'Test Message');
@@ -26,7 +27,7 @@ test.describe('Tier 2 Features - Others', () => {
   });
 
   test('EREP-01: eReport Form', async ({ page }) => {
-    await page.goto('/ereport');
+    await navigateTo(page, '/ereport');
     await page.locator('button:has-text("Broken Infrastructure")').click();
     await page.fill('input[placeholder="e.g., Barangay Bahay Toro, Quezon City"]', 'QC');
     await page.fill('textarea', 'Pothole on Main St.');
@@ -35,7 +36,7 @@ test.describe('Tier 2 Features - Others', () => {
   });
 
   test('PAY-01: eGovPay Form', async ({ page }) => {
-    await page.goto('/egovpay');
+    await navigateTo(page, '/egovpay');
     await page.locator('button', { hasText: 'SSS Contribution' }).click();
     await page.locator('button:has-text("GCash")').click();
     await page.locator('button:has-text("Pay ₱")').click();
@@ -43,7 +44,7 @@ test.describe('Tier 2 Features - Others', () => {
   });
 
   test('EMP-01: Employment Listing', async ({ page }) => {
-    await page.goto('/employment');
+    await navigateTo(page, '/employment');
     await expect(page.locator('text=Government Jobs')).toBeVisible();
     
     // Open a job
@@ -52,7 +53,7 @@ test.describe('Tier 2 Features - Others', () => {
   });
 
   test('AI-01: eGov AI Chatbot', async ({ page }) => {
-    await page.goto('/egov-ai');
+    await navigateTo(page, '/egov-ai');
     await page.fill('input[type="text"]', 'NBI');
     await page.locator('button[aria-label="Send message"]').click();
     
@@ -61,13 +62,13 @@ test.describe('Tier 2 Features - Others', () => {
   });
 
   test('WEATH-01: Weather Data', async ({ page }) => {
-    await page.goto('/weather');
+    await navigateTo(page, '/weather');
     await expect(page.locator('text=Quezon City')).toBeVisible();
     await expect(page.locator('text=Hourly Forecast')).toBeVisible();
   });
 
   test('SPEED-01: Speed Test', async ({ page }) => {
-    await page.goto('/speedtest');
+    await navigateTo(page, '/speedtest');
     await page.locator('button:has-text("GO")').click();
     await expect(page.locator('text=Complete')).toBeVisible({ timeout: 15000 });
   });

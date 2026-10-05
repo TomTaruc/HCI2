@@ -1,18 +1,19 @@
+import { navigateTo, getExpectedUrl } from './utils/nav';
 import { test, expect } from '@playwright/test';
 
 test.describe('Agency / NGA Transaction (Tier 1 - Flow C)', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/HCI2/');
     await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
     await page.reload();
     // Use seeded account 1 (verified)
-    await page.goto('/welcome');
+    await navigateTo(page, '/welcome');
     await page.locator('button:has-text("Log In")').click();
-    await page.fill('input[type="tel"]', '09189876543');
+    await page.fill('input[type="tel"]', '9189876543');
     await page.locator('button:has-text("Continue")').click();
     await expect(page.locator('text=/Enter your 6-digit MPIN/')).toBeVisible();
     for (let i = 0; i < 6; i++) await page.locator('button:has-text("1")').first().click();
-    await page.waitForURL('**/home', { timeout: 15000 });
+    await page.waitForURL(getExpectedUrl('/home'), { timeout: 15000 });
     await expect(page.locator('text=Mabuhay')).toBeVisible({ timeout: 15000 });
   });
 
@@ -30,7 +31,7 @@ test.describe('Agency / NGA Transaction (Tier 1 - Flow C)', () => {
 
   test('AGY-02, 03: SSS Detail and Linking', async ({ page }) => {
     // Direct navigate to SSS detail
-    await page.goto('/agencies/sss');
+    await navigateTo(page, '/agencies/sss');
     
     await expect(page.locator('text=Social Security System')).toBeVisible();
     await expect(page.locator('text=Overview')).toBeVisible();
@@ -39,7 +40,7 @@ test.describe('Agency / NGA Transaction (Tier 1 - Flow C)', () => {
     // Wait, the seeded SSS agency is linked: true in db.ts.
     // Let's test unlinking or checking another agency that is unlinked. 
     // GSIS is unlinked in the seed data.
-    await page.goto('/agencies/gsis');
+    await navigateTo(page, '/agencies/gsis');
     await expect(page.locator('text=Not linked').first()).toBeVisible({ timeout: 10000 });
     
     // Attempt to link
@@ -51,7 +52,7 @@ test.describe('Agency / NGA Transaction (Tier 1 - Flow C)', () => {
   });
 
   test('AGY-04: SSS Records tab renders table', async ({ page }) => {
-    await page.goto('/agencies/sss');
+    await navigateTo(page, '/agencies/sss'); await page.fill('input[type="text"]', '34-1234567-8'); await page.locator('button:has-text("Link Account")').click(); await expect(page.locator('text=Account linked successfully')).toBeVisible({ timeout: 10000 });
     await page.locator('button[role="tab"]:has-text("records")').click();
     
     await expect(page.locator('text=Contribution History')).toBeVisible();
@@ -60,7 +61,7 @@ test.describe('Agency / NGA Transaction (Tier 1 - Flow C)', () => {
   });
 
   test('AGY-06: Unlinked agency records tab shows empty state', async ({ page }) => {
-    await page.goto('/agencies/gsis'); // unlinked initially
+    await navigateTo(page, '/agencies/gsis'); // unlinked initially
     await page.locator('button[role="tab"]:has-text("records")').click();
     
     await expect(page.locator('text=No linked account')).toBeVisible();
@@ -68,7 +69,7 @@ test.describe('Agency / NGA Transaction (Tier 1 - Flow C)', () => {
   });
 
   test('AGY-08: LGU screen', async ({ page }) => {
-    await page.goto('/lgu');
+    await navigateTo(page, '/lgu');
     await expect(page.locator('text=Your LGU')).toBeVisible();
     await expect(page.locator('text=Quezon City')).toBeVisible(); // QC is default
     
