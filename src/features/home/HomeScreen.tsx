@@ -24,10 +24,10 @@ const ALL_TILES = [
   { id: 'tourism', label: 'Tourism', icon: <Palmtree size={24} />, path: '/home/tourism', requiresVerification: false },
   { id: 'travel', label: 'Travel', icon: <Plane size={24} />, path: '/etravel', requiresVerification: false },
   { id: 'ofw', label: 'OFW', icon: <Globe2 size={24} />, path: '/agencies/owwa', requiresVerification: true, isNew: true },
-  { id: 'health', label: 'Health', icon: <HeartPulse size={24} />, path: '/agencies/philhealth', requiresVerification: true },
+  { id: 'health', label: 'Health', icon: <HeartPulse size={24} />, path: '/health', requiresVerification: true },
   { id: 'report', label: 'Report', icon: <FileWarning size={24} />, path: '/ereport', requiresVerification: false },
-  { id: 'simcard', label: 'Sim Card', icon: <Smartphone size={24} />, path: '/services', requiresVerification: true },
-  { id: 'startup', label: 'Start-Up', icon: <Rocket size={24} />, path: '/services', requiresVerification: true, isNew: true },
+  { id: 'simcard', label: 'Sim Card', icon: <Smartphone size={24} />, path: '/sim-registration', requiresVerification: true },
+  { id: 'startup', label: 'Start-Up', icon: <Rocket size={24} />, path: '/startup', requiresVerification: true, isNew: true },
   { id: 'bpesh', label: 'Services Hub', icon: <Building2 size={24} />, path: '/bpesh', requiresVerification: true },
   { id: 'egovpay', label: 'eGovPay', icon: <CreditCard size={24} />, path: '/egovpay', requiresVerification: true },
 ];

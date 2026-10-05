@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Verification Flow (Tier 1)', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/HCI2/');
-    await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); });
+    await page.evaluate(() => { localStorage.clear(); localStorage.setItem('egov_disclaimerShown', 'true'); localStorage.setItem('egov_instantVerify', 'true'); });
     await page.reload();
     
     // Login as unverified user (Juan, 9171234567, 111111)

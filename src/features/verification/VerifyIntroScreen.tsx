@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, IdCard, Camera, Clock } from 'lucide-react';
+import { ShieldCheck, IdCard, Camera, Clock, ClipboardList, Smartphone, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
@@ -64,13 +64,13 @@ export function VerifyIntroScreen() {
             <h2 className="text-h2 font-semibold text-text-primary">What you'll need</h2>
             <div className="flex flex-col gap-2">
               {[
-                '📋 Your personal information (full legal name, date of birth, sex, address)',
-                '🪪 Your PhilSys Card Number (the 12-digit number on your National ID)',
-                '📱 Good lighting for the liveness check',
+                { icon: ClipboardList, text: 'Your personal information (full legal name, date of birth, sex, address)' },
+                { icon: IdCard, text: 'Your PhilSys Card Number (the 12-digit number on your National ID)' },
+                { icon: Smartphone, text: 'Good lighting for the liveness check' },
               ].map((item, i) => (
                 <div key={i} className="flex items-start gap-3 bg-white rounded-lg border border-border p-3">
-                  <span className="text-base">{item.split(' ')[0]}</span>
-                  <p className="text-body-sm text-text-primary">{item.slice(item.indexOf(' ') + 1)}</p>
+                  <item.icon className="text-primary shrink-0 mt-0.5" size={20} />
+                  <p className="text-body-sm text-text-primary">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -93,9 +93,12 @@ export function VerifyIntroScreen() {
           </div>
 
           <div className="bg-primary-light rounded-lg p-4">
-            <p className="text-body-sm text-primary font-medium">
-              🔒 Your information is encrypted and used only to verify your identity against PhilSys records. It is never shared with third parties.
-            </p>
+            <div className="flex gap-2 items-start">
+              <Lock size={16} className="text-primary shrink-0 mt-0.5" />
+              <p className="text-body-sm text-primary font-medium">
+                Your information is encrypted and used only to verify your identity against PhilSys records. It is never shared with third parties.
+              </p>
+            </div>
           </div>
 
           <Button variant="primary" fullWidth size="lg" onClick={() => navigate('/verify/personal-info')}>

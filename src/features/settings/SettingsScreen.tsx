@@ -232,6 +232,12 @@ export function SettingsScreen() {
 
   const closeModal = () => {
     setModal(null);
+    // Reset MPIN state
+    setCurrentMpin(""); setNewMpin(""); setConfirmMpin(""); setMpinStep("verify"); setMpinError("");
+    // Reset Email state
+    setNewEmail(""); setEmailOtp(""); setEmailChallengeId(""); setEmailStep("input"); setEmailError("");
+    // Reset Mobile state
+    setNewMobile(""); setOtp(""); setChallengeId(""); setMobileStep("input"); setMobileError("");
   };
 
   return (

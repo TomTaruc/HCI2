@@ -6,18 +6,40 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../state/AuthContext';
 import { db } from '../../mock/db';
-import type { Agency } from '../../mock/services/agencyService';
+import { getAgencyById } from '../../mock/services/agencyService';
 
 export function PhilHealthMembershipScreen() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Find philhealth agency to get the linked status
-  const agencies = db.get<Agency[]>('agencies') || [];
-  const philhealth = agencies.find(a => a.id === 'philhealth');
-  
-  const isLinked = philhealth?.linked;
-  const memberNumber = philhealth?.memberNumber || 'Not Linked';
+  const [isLinked, setIsLinked] = React.useState(false);
+  const [memberNumber, setMemberNumber] = React.useState('Not Linked');
+
+  React.useEffect(() => {
+    async function load() {
+      if (!user) return;
+      try {
+        const agency = await getAgencyById(user.id, 'philhealth');
+        setIsLinked(agency.linked);
+        setMemberNumber(agency.memberNumber || 'Not Linked');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    load();
+  }, [user]);
+
+  const generateMDR = () => {
+    const blob = new Blob([`Member Data Record\nName: ${user?.firstName} ${user?.lastName}\nPhilHealth No: ${memberNumber}\nStatus: Active\nGenerated on: ${new Date().toLocaleString()}`], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MDR_${user?.lastName}_${memberNumber}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="flex-1 flex flex-col bg-bg">
@@ -67,8 +89,8 @@ export function PhilHealthMembershipScreen() {
               </p>
               <div className="bg-bg border border-dashed border-border rounded-lg p-6 flex flex-col items-center justify-center gap-3">
                 <div className="text-4xl">📄</div>
-                <p className="text-body font-medium">Sample_MDR.pdf</p>
-                <Button variant="outline" size="sm" onClick={() => alert('Downloading demo sample document...')}>
+                <p className="text-body font-medium">Sample_MDR.txt</p>
+                <Button variant="outline" size="sm" onClick={generateMDR}>
                   Download Document
                 </Button>
               </div>

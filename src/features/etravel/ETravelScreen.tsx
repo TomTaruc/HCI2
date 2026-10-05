@@ -69,17 +69,21 @@ export function ETravelScreen() {
       return;
     }
     
-    // Redirect to eGovPay for payment (Travel Tax)
-    createPendingPayment({
-      id: ref,
-      userId: user?.id || 'guest',
-      sourceService: 'eTravel',
-      amount: travelType === 'outbound' ? 1620 : 0,
-      description: travelType === 'outbound' ? 'Travel Tax' : 'eTravel Processing',
-      returnTo: '/etravel'
-    });
-    
-    navigate('/egovpay', { state: { pendingPaymentId: ref } });
+    if (travelType === 'outbound') {
+      // Redirect to eGovPay for payment (Travel Tax)
+      createPendingPayment({
+        id: ref,
+        userId: user?.id || 'guest',
+        sourceService: 'eTravel',
+        amount: 1620,
+        description: 'Travel Tax',
+        returnTo: '/etravel'
+      });
+      
+      navigate('/egovpay', { state: { pendingPaymentId: ref } });
+    } else {
+      setStage('done');
+    }
   };
 
   return (

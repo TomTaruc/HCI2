@@ -146,6 +146,13 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
   const canonical = normalizePHMobile(rawMobile);
   if (!canonical) throw new ApiError('INVALID_MOBILE', 'Invalid Philippine mobile number.');
 
+  if (purpose === 'registration' || purpose === 'update') {
+    const allUsers = db.get<User[]>('users') || [];
+    if (allUsers.find(u => u.mobileNumber === canonical)) {
+      throw new ApiError('MOBILE_TAKEN', 'This mobile number is already registered.');
+    }
+  }
+
   // Create a mock OTP challenge
   // Maintain an index of active challenges to reliably invalidate older ones
   const activeKey = `otpActive:${canonical}:${purpose}`;
@@ -185,6 +192,13 @@ export async function requestEmailOTP(email: string, purpose: 'registration' | '
   await delay(800 + Math.random() * 400);
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new ApiError('INVALID_EMAIL', 'Invalid email address.');
+
+  if (purpose === 'registration' || purpose === 'update') {
+    const allUsers = db.get<User[]>('users') || [];
+    if (allUsers.find(u => u.email === normalized)) {
+      throw new ApiError('EMAIL_TAKEN', 'This email is already registered.');
+    }
+  }
 
   // Maintain an index of active challenges to reliably invalidate older ones
   const activeKey = `otpActive:${normalized}:${purpose}`;

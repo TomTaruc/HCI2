@@ -58,15 +58,23 @@ export function PhilHealthFacilitiesScreen() {
                     {facility.type}
                   </span>
                 </div>
-                <div className="flex flex-col gap-1 mt-2 text-body-sm text-text-secondary">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2 mt-2 text-body-sm text-text-secondary">
+                  <a 
+                    href={`https://maps.google.com/?q=${encodeURIComponent(facility.name + ' ' + facility.address)}`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
                     <MapPin size={14} className="shrink-0" />
-                    <span>{facility.address}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
+                    <span className="underline decoration-border hover:decoration-primary">{facility.address}</span>
+                  </a>
+                  <a 
+                    href={`tel:${facility.phone.replace(/[^0-9]/g, '')}`} 
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
                     <Phone size={14} className="shrink-0" />
-                    <span>{facility.phone}</span>
-                  </div>
+                    <span className="underline decoration-border hover:decoration-primary">{facility.phone}</span>
+                  </a>
                 </div>
               </Card>
             ))
@@ -76,6 +84,9 @@ export function PhilHealthFacilitiesScreen() {
             </div>
           )}
         </div>
+        <p className="text-xs text-text-secondary text-center mt-2">
+          Data source: DOH NHFR (Sample data for demonstration only)
+        </p>
       </ScreenContainer>
     </div>
   );

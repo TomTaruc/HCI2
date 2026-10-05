@@ -32,15 +32,22 @@ export function EGovPayScreen() {
   const [pendingItem, setPendingItem] = useState<PendingPayment | null>(null);
 
   React.useEffect(() => {
-    if (pendingId && user) {
-      const item = getPendingPayment(user.id, pendingId);
+    if (pendingId) {
+      const userId = user ? user.id : 'guest';
+      const item = getPendingPayment(userId, pendingId);
       if (item && item.status === 'pending') {
         setPendingItem(item);
       }
+    } else if (!user) {
+      // If no pending payment and no user, require login
+      navigate('/welcome', { replace: true });
     }
-  }, [pendingId, user]);
+  }, [pendingId, user, navigate]);
 
-  const [selected, setSelected] = useState<typeof PAYMENT_ITEMS[0] | null>(null);
+  const prefillId = (location.state as { prefillItemId?: string })?.prefillItemId;
+  const [selected, setSelected] = useState<typeof PAYMENT_ITEMS[0] | null>(
+    prefillId ? (PAYMENT_ITEMS.find(i => i.id === prefillId) || null) : null
+  );
   const [payMethod, setPayMethod] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -51,9 +58,10 @@ export function EGovPayScreen() {
     setIsLoading(true);
     setError('');
     
-    if (pendingItem && user) {
+    if (pendingItem) {
       try {
-        const ref = await processPayment(user.id, pendingItem.id, payMethod);
+        const userId = user ? user.id : 'guest';
+        const ref = await processPayment(userId, pendingItem.id, payMethod);
         setRefNumber(ref);
         setDone(true);
       } catch (err: any) {
@@ -94,10 +102,10 @@ export function EGovPayScreen() {
               <p className="text-body-sm text-text-secondary">Official Receipt Number</p>
               <p className="text-h2 font-bold text-primary font-mono mt-1">{refNumber}</p>
               <div className="mt-3 flex justify-between text-body-sm">
-                <span className="text-text-secondary">{selected?.label}</span>
-                <span className="text-text-primary font-bold">₱{selected?.amount.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                <span className="text-text-secondary">{pendingItem ? pendingItem.description : selected?.label}</span>
+                <span className="text-text-primary font-bold">₱{(pendingItem ? pendingItem.amount : selected?.amount)?.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
               </div>
-              <p className="text-xs text-text-secondary mt-2">{selected?.agency} · {new Date().toLocaleDateString('en-PH')}</p>
+              <p className="text-xs text-text-secondary mt-2">{pendingItem ? pendingItem.sourceService : selected?.agency} · {new Date().toLocaleDateString('en-PH')}</p>
             </div>
             <p className="text-body-sm text-text-secondary">This is a simulated payment for research purposes. No real money was charged.</p>
             <div className="flex gap-3 w-full">
@@ -119,8 +127,9 @@ export function EGovPayScreen() {
   }
 
   const handleCancelPending = () => {
-    if (pendingItem && user) {
-      cancelPendingPayment(user.id, pendingItem.id);
+    if (pendingItem) {
+      const userId = user ? user.id : 'guest';
+      cancelPendingPayment(userId, pendingItem.id);
       navigate(pendingItem.returnTo);
     }
   };
@@ -129,7 +138,7 @@ export function EGovPayScreen() {
     <div className="flex-1 flex flex-col">
       <AppBar title="eGovPay" showBack onBack={pendingItem ? handleCancelPending : undefined} />
       <div className="bp-stripe" aria-hidden="true" />
-      <ScreenContainer className="pt-4 gap-5">
+      <ScreenContainer className="pt-4 gap-5 pb-24">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-primary-light rounded-xl flex items-center justify-center"><CreditCard size={24} className="text-primary" /></div>
           <div>

@@ -1,43 +1,115 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { CheckCircle, Smartphone } from 'lucide-react';
+import { CheckCircle, Smartphone, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { db, delay } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
+
+interface SimRegistration {
+  id: string;
+  userId: string;
+  mobile: string;
+  status: 'registered';
+  registeredAt: string;
+}
 
 export function SIMRegistrationScreen() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'input' | 'otp' | 'registered'>('input');
+  const { user } = useAuth();
+  
+  const [step, setStep] = useState<'loading' | 'info' | 'input' | 'otp' | 'registered'>('loading');
   const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [registeredSims, setRegisteredSims] = useState<SimRegistration[]>([]);
 
-  const handleSendOTP = () => {
+  useEffect(() => {
+    if (user) {
+      const allSims = db.get<SimRegistration[]>('sim_registrations') || [];
+      const userSims = allSims.filter(s => s.userId === user.id);
+      setRegisteredSims(userSims);
+      
+      if (userSims.length > 0) {
+        setStep('registered');
+      } else {
+        setStep('info');
+      }
+    }
+  }, [user]);
+
+  const handleSendOTP = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    setError('');
+    await delay(1000);
+    
+    // Normalize mobile: remove non-digits, ensure length
+    const cleanMobile = mobile.replace(/\D/g, '');
+    if (cleanMobile.length !== 10) {
+      setError('Invalid mobile number format. Expected 10 digits.');
       setIsLoading(false);
-      setStep('otp');
-    }, 1000);
+      return;
+    }
+    
+    const allSims = db.get<SimRegistration[]>('sim_registrations') || [];
+    if (allSims.find(s => s.mobile === cleanMobile)) {
+      setError('This SIM is already registered.');
+      setIsLoading(false);
+      return;
+    }
+
+    setMobile(cleanMobile);
+    setIsLoading(false);
+    setStep('otp');
   };
 
-  const handleVerifyOTP = () => {
+  const handleVerifyOTP = async () => {
     setIsLoading(true);
-    setTimeout(() => {
+    setError('');
+    await delay(1000);
+    
+    if (otp !== '123456' && otp !== '000000') {
+      setError('Invalid OTP. Use 123456 or 000000 for demo.');
       setIsLoading(false);
-      setStep('registered');
-    }, 1000);
+      return;
+    }
+
+    const allSims = db.get<SimRegistration[]>('sim_registrations') || [];
+    const newSim: SimRegistration = {
+      id: `SIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      userId: user!.id,
+      mobile,
+      status: 'registered',
+      registeredAt: new Date().toISOString()
+    };
+    
+    db.set('sim_registrations', [...allSims, newSim]);
+    setRegisteredSims([...registeredSims, newSim]);
+    
+    setIsLoading(false);
+    setStep('registered');
   };
+
+  if (step === 'loading') {
+    return <div className="flex-1 flex flex-col bg-bg"><AppBar title="SIM Registration" showBack /></div>;
+  }
 
   return (
     <div className="flex-1 flex flex-col bg-bg">
-      <AppBar title="SIM Registration" onBack={() => step === 'input' || step === 'registered' ? navigate(-1) : setStep('input')} />
+      <AppBar title="SIM Registration" onBack={() => {
+        if (step === 'input') setStep('info');
+        else if (step === 'otp') setStep('input');
+        else navigate(-1);
+      }} />
       <div className="bp-stripe" aria-hidden="true" />
       
       <ScreenContainer className="pt-4 pb-20 gap-4">
-        {step === 'input' && (
+        {step === 'info' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
             <div className="w-16 h-16 bg-primary-light rounded-2xl flex items-center justify-center text-primary mb-2">
               <Smartphone size={32} />
@@ -45,11 +117,28 @@ export function SIMRegistrationScreen() {
             <div>
               <h1 className="text-h1 font-bold text-text-primary">Register Your SIM</h1>
               <p className="text-body-sm text-text-secondary mt-1">
-                Enter your 10-digit mobile number to verify and register your SIM card under the SIM Registration Act.
+                Verify and register your SIM card under the SIM Registration Act.
               </p>
             </div>
+            <Button variant="primary" onClick={() => setStep('input')}>Start Registration</Button>
+          </motion.div>
+        )}
 
-            <Card className="mt-4">
+        {step === 'input' && (
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex flex-col gap-4">
+            <div>
+              <h1 className="text-h1 font-bold text-text-primary">Mobile Number</h1>
+              <p className="text-body-sm text-text-secondary mt-1">Enter your 10-digit mobile number.</p>
+            </div>
+
+            {error && (
+              <div className="p-3 bg-error/10 border border-error/20 rounded-lg text-error text-body-sm flex gap-2">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <Card className="mt-2">
               <Input
                 label="Mobile Number"
                 placeholder="e.g. 912 345 6789"
@@ -77,11 +166,18 @@ export function SIMRegistrationScreen() {
             <div>
               <h1 className="text-h1 font-bold text-text-primary">Enter OTP</h1>
               <p className="text-body-sm text-text-secondary mt-1">
-                We sent a 6-digit code to +63 {mobile}. Enter it below to confirm your registration.
+                We sent a 6-digit code to +63 {mobile}. Use 123456 or 000000 for this demo.
               </p>
             </div>
 
-            <Card className="mt-4">
+            {error && (
+              <div className="p-3 bg-error/10 border border-error/20 rounded-lg text-error text-body-sm flex gap-2">
+                <AlertTriangle size={16} className="shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <Card className="mt-2">
               <Input
                 label="One-Time Password"
                 placeholder="Enter 6-digit OTP"
@@ -112,11 +208,24 @@ export function SIMRegistrationScreen() {
             <div>
               <h2 className="text-h2 font-bold text-text-primary">SIM Registered</h2>
               <p className="text-body text-text-secondary mt-2">
-                Your mobile number +63 {mobile} has been successfully registered to your eGovPH account.
+                Your SIM cards have been registered successfully.
               </p>
             </div>
-            <Button variant="primary" fullWidth onClick={() => navigate('/home')}>
-              Return to Home
+            
+            <div className="w-full flex flex-col gap-3 mt-2">
+              {registeredSims.map(sim => (
+                <Card key={sim.id} padding="md" className="flex items-center justify-between text-left">
+                  <div>
+                    <p className="text-body font-mono font-bold">+63 {sim.mobile}</p>
+                    <p className="text-xs text-text-secondary">Registered: {new Date(sim.registeredAt).toLocaleDateString()}</p>
+                  </div>
+                  <CheckCircle size={20} className="text-success" />
+                </Card>
+              ))}
+            </div>
+
+            <Button variant="outline" fullWidth onClick={() => { setMobile(''); setOtp(''); setStep('input'); }}>
+              Register Another SIM
             </Button>
           </motion.div>
         )}

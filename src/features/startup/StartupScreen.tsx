@@ -1,30 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Rocket, CheckCircle } from 'lucide-react';
+import { Rocket, CheckCircle, Clock, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { db, delay } from '../../mock/db';
+import { useAuth } from '../../state/AuthContext';
+
+interface StartupRegistration {
+  id: string;
+  userId: string;
+  startupName: string;
+  sector: string;
+  description: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+}
 
 export function StartupScreen() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'info' | 'form' | 'success'>('info');
+  const { user } = useAuth();
+  const [step, setStep] = useState<'info' | 'history' | 'form' | 'success'>('info');
   const [formData, setFormData] = useState({ startupName: '', sector: '', description: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [registrations, setRegistrations] = useState<StartupRegistration[]>([]);
+  const [refNum, setRefNum] = useState('');
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    if (user) {
+      const allStartups = db.get<StartupRegistration[]>('startup_registrations') || [];
+      const userStartups = allStartups.filter(s => s.userId === user.id).sort((a,b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      setRegistrations(userStartups);
+    }
+  }, [user, step]);
+
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setStep('success');
-    }, 1200);
+    await delay(1200);
+    
+    const newReqId = `SUP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    const newReg: StartupRegistration = {
+      id: newReqId,
+      userId: user!.id,
+      startupName: formData.startupName,
+      sector: formData.sector,
+      description: formData.description,
+      status: 'pending',
+      submittedAt: new Date().toISOString()
+    };
+    
+    const allStartups = db.get<StartupRegistration[]>('startup_registrations') || [];
+    allStartups.push(newReg);
+    db.set('startup_registrations', allStartups);
+    
+    setRefNum(newReqId);
+    setIsSubmitting(false);
+    setStep('success');
   };
 
   return (
     <div className="flex-1 flex flex-col bg-bg">
-      <AppBar title="Start-Up PH" onBack={() => step === 'info' || step === 'success' ? navigate(-1) : setStep('info')} />
+      <AppBar title="Start-Up PH" onBack={() => {
+        if (step === 'info' || step === 'success') navigate(-1);
+        else if (step === 'history') setStep('info');
+        else if (step === 'form') registrations.length > 0 ? setStep('history') : setStep('info');
+      }} />
       <div className="bp-stripe" aria-hidden="true" />
       
       <ScreenContainer className="pt-4 pb-20 gap-4">
@@ -50,9 +93,37 @@ export function StartupScreen() {
               </ul>
             </Card>
 
-            <Button variant="primary" size="lg" className="mt-4" onClick={() => setStep('form')}>
-              Register Start-Up
+            <Button variant="primary" size="lg" className="mt-4" onClick={() => registrations.length > 0 ? setStep('history') : setStep('form')}>
+              {registrations.length > 0 ? 'View Registered Start-Ups' : 'Register Start-Up'}
             </Button>
+          </motion.div>
+        )}
+
+        {step === 'history' && (
+          <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-h2 font-bold text-text-primary">Your Start-Ups</h2>
+              <Button variant="outline" size="sm" onClick={() => { setFormData({startupName:'', sector:'', description:''}); setStep('form'); }}>
+                <Plus size={16} /> New
+              </Button>
+            </div>
+            
+            {registrations.map(reg => (
+              <Card key={reg.id} padding="md" className="flex flex-col gap-2">
+                <div className="flex justify-between items-start">
+                  <span className="text-body font-semibold text-primary font-mono">{reg.id}</span>
+                  <span className="text-xs font-semibold uppercase px-2 py-1 bg-warning-light text-warning rounded-full">{reg.status}</span>
+                </div>
+                <div>
+                  <p className="text-body font-bold">{reg.startupName}</p>
+                  <p className="text-body-sm text-text-secondary">{reg.sector}</p>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-text-secondary">
+                  <Clock size={12} />
+                  <span>Submitted: {new Date(reg.submittedAt).toLocaleDateString()}</span>
+                </div>
+              </Card>
+            ))}
           </motion.div>
         )}
 
@@ -100,14 +171,23 @@ export function StartupScreen() {
               <CheckCircle size={40} className="text-success" />
             </div>
             <div>
-              <h2 className="text-h2 font-bold text-text-primary">Application Received!</h2>
+              <h2 className="text-h2 font-bold text-text-primary">Application Submitted!</h2>
               <p className="text-body text-text-secondary mt-2">
-                Your Start-Up registration for <span className="font-semibold text-text-primary">{formData.startupName}</span> has been submitted. We will review your application and contact you soon.
+                We have received your startup registration.
               </p>
             </div>
-            <Button variant="primary" fullWidth onClick={() => navigate('/home')}>
-              Back to Home
-            </Button>
+            <Card className="w-full bg-bg border-dashed">
+              <p className="text-body-sm text-text-secondary uppercase tracking-wider font-semibold mb-1">Reference Number</p>
+              <p className="text-h2 font-mono font-bold text-primary tracking-widest">{refNum}</p>
+            </Card>
+            <div className="w-full flex flex-col gap-3 mt-4">
+              <Button variant="primary" fullWidth onClick={() => navigate('/home')}>
+                Back to Home
+              </Button>
+              <Button variant="outline" fullWidth onClick={() => setStep('history')}>
+                View Applications
+              </Button>
+            </div>
           </motion.div>
         )}
       </ScreenContainer>

@@ -205,7 +205,7 @@ export function App() {
         <Route path="/consultation" element={<ProtectedRoute><ConsultationScreen /></ProtectedRoute>} />
         <Route path="/employment" element={<ProtectedRoute><EmploymentScreen /></ProtectedRoute>} />
         <Route path="/ereport" element={<ProtectedRoute><EReportScreen /></ProtectedRoute>} />
-        <Route path="/egovpay" element={<VerifiedRoute><EGovPayScreen /></VerifiedRoute>} />
+        <Route path="/egovpay" element={<EGovPayScreen />} />
         <Route path="/egov-ai" element={<ProtectedRoute><EGovAIScreen /></ProtectedRoute>} />
         <Route path="/weather" element={<ProtectedRoute><WeatherScreen /></ProtectedRoute>} />
         <Route path="/speedtest" element={<ProtectedRoute><SpeedTestScreen /></ProtectedRoute>} />

@@ -46,7 +46,7 @@ export function AppBar({
         transparent ? 'bg-transparent' : 'bg-white border-b border-border',
       ].join(' ')}
     >
-      {showBack && (
+      {(showBack || !!onBack) && (
         <div className="flex items-center">
           <button
             onClick={handleBack}

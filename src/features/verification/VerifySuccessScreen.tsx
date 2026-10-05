@@ -5,7 +5,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Star, ChevronRight } from 'lucide-react';
+import { ShieldCheck, Star, ChevronRight, IdCard, Building2, Calendar, Wallet } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../state/AuthContext';
 
@@ -68,7 +68,7 @@ export function VerifySuccessScreen() {
       {/* One-time confetti — per spec Section 7.1 */}
       {!hasShownConfetti.current && (() => { hasShownConfetti.current = true; return <Confetti />; })()}
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 gap-8 text-center pb-24">
         {/* Animated checkmark */}
         <motion.div
           initial={{ scale: 0 }}
@@ -117,14 +117,14 @@ export function VerifySuccessScreen() {
         >
           <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider">Now unlocked</p>
           {[
-            '🪪 Digital ID wallet (ePhilID, eDL, and more)',
-            '🏦 SSS, GSIS, PhilHealth, Pag-IBIG portals',
-            '📋 BPESH service appointments',
-            '💰 eGovPay for government fees',
+            { icon: IdCard, text: 'Digital ID wallet (ePhilID, eDL, and more)' },
+            { icon: Building2, text: 'SSS, GSIS, PhilHealth, Pag-IBIG portals' },
+            { icon: Calendar, text: 'BPESH service appointments' },
+            { icon: Wallet, text: 'eGovPay for government fees' },
           ].map((item, i) => (
             <div key={i} className="flex items-center gap-2">
-              <span className="text-base">{item.split(' ')[0]}</span>
-              <span className="text-body-sm text-text-primary">{item.slice(item.indexOf(' ') + 1)}</span>
+              <item.icon className="text-primary shrink-0" size={18} />
+              <span className="text-body-sm text-text-primary">{item.text}</span>
             </div>
           ))}
         </motion.div>

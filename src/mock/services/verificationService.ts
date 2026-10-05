@@ -163,46 +163,36 @@ export async function validatePersonalInfo(
     );
   }
 
+  const users = db.get<User[]>('users') ?? [];
+  const pcnInUse = users.find(u => u.pcn === pcn && u.id !== userId);
+  if (pcnInUse) {
+    throw new ApiError(
+      'PCN_TAKEN',
+      'This PhilSys Card Number is already registered to another account.'
+    );
+  }
+
   const records = getPhilSysRecords();
   const record = records[pcn];
-  if (!record) {
-    throw new ApiError(
-      'PCN_NOT_FOUND',
-      'This PhilSys Card Number was not found in our records. Please check the number and try again.'
-    );
-  }
-
-  // Ownership check: the PCN must belong to the current user's synthetic account
-  if (record.userId !== userId) {
-    throw new ApiError(
-      'PCN_OWNERSHIP',
-      'This PhilSys Card Number does not match your account. Please use the PCN assigned to your demo account.'
-    );
-  }
-
-  // Exact normalized name match (case-insensitive, normalize whitespace)
-  const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
-  const nameMatch = normalize(record.fullName) === normalize(payload.fullName);
-
-  if (!nameMatch) {
-    throw new ApiError(
-      'RECORD_MISMATCH',
-      'The name you entered does not match the PhilSys record. Check your spelling and try again. Your name must exactly match your National ID.'
-    );
-  }
-
-  if (record.dateOfBirth !== payload.dateOfBirth) {
-    throw new ApiError(
-      'RECORD_MISMATCH',
-      'The date of birth you entered does not match the PhilSys record.'
-    );
-  }
-
-  if (record.sex !== payload.sex) {
-    throw new ApiError(
-      'RECORD_MISMATCH',
-      'The sex you selected does not match the PhilSys record.'
-    );
+  
+  // If it's a seeded record, enforce exact matches
+  if (record) {
+    if (record.userId !== userId) {
+      throw new ApiError(
+        'PCN_OWNERSHIP',
+        'This PhilSys Card Number does not match your account. Please use the PCN assigned to your demo account.'
+      );
+    }
+    const normalize = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (normalize(record.fullName) !== normalize(payload.fullName)) {
+      throw new ApiError('RECORD_MISMATCH', 'The name you entered does not match the PhilSys record.');
+    }
+    if (record.dateOfBirth !== payload.dateOfBirth) {
+      throw new ApiError('RECORD_MISMATCH', 'The date of birth you entered does not match the PhilSys record.');
+    }
+    if (record.sex !== payload.sex) {
+      throw new ApiError('RECORD_MISMATCH', 'The sex you selected does not match the PhilSys record.');
+    }
   }
 
   return { valid: true };

@@ -4,7 +4,7 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, Trash2, Key, Settings } from 'lucide-react';
+import { Send, Bot, Trash2 } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useServices } from '../../state/ServiceContext';
@@ -45,8 +45,7 @@ export function EGovAIScreen() {
   const services = useServices();
   const state = location.state as { initialPrompt?: string } | null;
   
-  const [apiKey, setApiKey] = useState(db.get<string>('gemini_api_key') || '');
-  const [showSettings, setShowSettings] = useState(!db.get<string>('gemini_api_key'));
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
   const [messages, setMessages] = useState<Message[]>(() => {
     const saved = db.get<Message[]>('egov_chat_history');
@@ -123,7 +122,7 @@ export function EGovAIScreen() {
       setMessages(m => [...m, { 
         id: Date.now().toString(), 
         role: 'model', 
-        text: 'Sorry, I encountered an error communicating with the AI service. Please check your API key.' 
+        text: 'Sorry, I encountered an error communicating with the AI service. Please check your API key configuration.' 
       }]);
     } finally {
       setIsTyping(false);
@@ -136,48 +135,15 @@ export function EGovAIScreen() {
     }
   };
 
-  const saveKey = (key: string) => {
-    setApiKey(key);
-    db.set('gemini_api_key', key);
-    setShowSettings(false);
-  };
-
   return (
     <div className="flex-1 flex flex-col relative">
       <AppBar title="eGov AI" showBack rightContent={
         <div className="flex gap-2 mr-2 text-primary">
           <button onClick={clearHistory} aria-label="Clear Chat"><Trash2 size={20} /></button>
-          <button onClick={() => setShowSettings(!showSettings)} aria-label="Settings"><Settings size={20} /></button>
         </div>
       } />
       <div className="bp-stripe" aria-hidden="true" />
 
-      {/* Settings Panel */}
-      {showSettings && (
-        <div className="bg-white border-b border-border p-4 shadow-sm z-10">
-          <h3 className="text-body font-semibold flex items-center gap-2 text-text-primary mb-2">
-            <Key size={16} /> API Settings
-          </h3>
-          <p className="text-body-sm text-text-secondary mb-3">
-            Please provide your Google Gemini API key to enable AI features. Your key is stored locally in your browser.
-          </p>
-          <div className="flex gap-2">
-            <input 
-              type="password"
-              placeholder="AIzaSy..."
-              className="flex-1 border border-border rounded-lg px-3 py-2 text-body-sm focus:border-primary outline-none"
-              value={apiKey}
-              onChange={e => setApiKey(e.target.value)}
-            />
-            <button 
-              onClick={() => saveKey(apiKey)}
-              className="bg-primary text-white px-4 py-2 rounded-lg text-body-sm font-semibold"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Chat area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 bg-bg">
@@ -241,7 +207,7 @@ export function EGovAIScreen() {
       </div>
 
       {/* Input */}
-      <div className="px-4 py-3 bg-white border-t border-border flex gap-2">
+      <div className="px-4 pt-3 pb-[80px] bg-white border-t border-border flex gap-2">
         <input
           type="text"
           value={input}

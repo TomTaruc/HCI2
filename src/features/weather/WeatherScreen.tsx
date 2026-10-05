@@ -8,10 +8,7 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { useServices } from '../../state/ServiceContext';
 import { Button } from '../../components/ui/Button';
 
-const ADVISORIES = [
-  { level: 'warning', title: 'INTERTROPICAL CONVERGENCE ZONE', body: 'Affecting eastern portions of the Visayas and Mindanao. Residents are advised to take precautionary measures.' },
-  { level: 'info', title: 'WEATHER UPDATE 4:00 PM', body: 'The Philippine Area of Responsibility (PAR) is currently clear. Isolated rain showers expected over Metro Manila this afternoon.' },
-];
+
 
 export function getWeatherIcon(code: number, className = "text-white") {
   // Map WMO weather codes to Lucide icons
@@ -115,8 +112,8 @@ export function WeatherScreen() {
 
           {/* PAGASA Advisories */}
           <div>
-            <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">PAGASA Advisories</p>
-            {ADVISORIES.map(a => (
+            <p className="text-body-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Live Advisories</p>
+            {weather.advisories.map(a => (
               <div key={a.title} className={`rounded-lg p-4 mb-2 border ${a.level === 'warning' ? 'bg-warning/10 border-warning/30' : 'bg-primary-light border-primary/20'}`}>
                 <p className={`text-xs font-bold uppercase tracking-wider mb-1 ${a.level === 'warning' ? 'text-warning' : 'text-primary'}`}>{a.title}</p>
                 <p className="text-body-sm text-text-primary">{a.body}</p>
@@ -124,7 +121,7 @@ export function WeatherScreen() {
             ))}
           </div>
 
-          <p className="text-xs text-text-secondary text-center">Source: Open-Meteo & PAGASA Mock</p>
+          <p className="text-xs text-text-secondary text-center">Source: Open-Meteo & GDACS Alerts</p>
         </div>
       </ScreenContainer>
     </div>

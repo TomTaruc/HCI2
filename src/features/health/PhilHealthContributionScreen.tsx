@@ -67,7 +67,7 @@ export function PhilHealthContributionScreen() {
               )}
             </div>
             
-            <Button variant="outline" fullWidth onClick={() => navigate('/egovpay?agency=philhealth')}>
+            <Button variant="outline" fullWidth onClick={() => navigate('/egovpay', { state: { prefillItemId: 'philhealth-prem' } })}>
               Pay Contributions via eGovPay
             </Button>
           </>
