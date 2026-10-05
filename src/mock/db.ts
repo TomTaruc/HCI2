@@ -180,12 +180,19 @@ export function seedDatabase(): void {
   }
 }
 
+import { clearFiles } from './fileStore';
+
 // ----------------------------------------------------------------
 // Reset all data (Research Tools: Reset Demo Data)
 // ----------------------------------------------------------------
 
-export function resetDatabase(): void {
+export async function resetDatabase(): Promise<void> {
   db.clear();
+  try {
+    await clearFiles();
+  } catch (err) {
+    console.warn('[eGovPH db] Failed to clear file store:', err);
+  }
   seedDatabase();
 }
 

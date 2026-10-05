@@ -1,32 +1,32 @@
-# React + TypeScript + Vite
+# eGovPH - HCI2 Prototype
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+This is an academic prototype of the eGovPH super app for Human-Computer Interaction usability testing. It simulates transactional behaviors (registration, verification, document management, claims) using a local persistence mock (`localStorage` and `IndexedDB`) so it can be deployed as a static site without backend infrastructure.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Running Tests
+
+Automated tests rely on Vitest (Unit) and Playwright (E2E).
+
+```bash
+# Unit tests
+npm run test
+
+# End-to-end browser tests
+npx playwright test
+```
+
+*Note: You may need to run `npx playwright install` first.*
+
+## Key Features
+* **Mock Local Database:** All user data, transactions, and preferences are saved locally. Reset this via `Settings -> Research Tools`.
+* **Attachment Persistence:** File uploads (Start-Up Pitch Decks, PhilHealth Claims, PDS Documents) are stored efficiently as Blob objects via `IndexedDB`.
+* **Adaptive Workflows:** The app handles session validation, simulated OTP challenges (demo codes: `123456`, `000000`), and real-time state changes seamlessly without reloading.
+* **Component-Driven:** Built using React functional components, standardized UI elements, and a centralized theming/routing configuration.
+
+*This project is not affiliated with the official Philippine Government.*

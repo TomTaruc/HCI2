@@ -11,9 +11,9 @@ import { db, resetDatabase } from '../../mock/db';
 export function ResearchToolsScreen() {
   const { user } = useAuth();
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Are you sure you want to reset all data? This will log you out and clear all localStorage state.')) {
-      resetDatabase(); // M-06: Use central reset function instead of direct localStorage manipulation
+      await resetDatabase(); // M-06: Use central reset function instead of direct localStorage manipulation
       window.location.href = '/';
     }
   };

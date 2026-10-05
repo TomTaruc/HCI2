@@ -5,8 +5,9 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { CheckCircle, Upload, X, FileText, Clock, Plus } from 'lucide-react';
+import { CheckCircle, Upload, X, FileText, Clock, Plus, Download } from 'lucide-react';
 import { db, delay } from '../../mock/db';
+import { saveFile, getFile } from '../../mock/fileStore';
 import { getAgencyById } from '../../mock/services/agencyService';
 import { useAuth } from '../../state/AuthContext';
 import { motion } from 'framer-motion';
@@ -83,10 +84,27 @@ export function PhilHealthClaimsScreen() {
       status: 'pending',
       submittedAt: new Date().toISOString()
     };
-    
+    if (file) {
+      try {
+        await saveFile(newReqId, file);
+      } catch (err) {
+        setFileError('Failed to save document attachment. Please try again.');
+        setIsSubmitting(false);
+        setStep('form');
+        return;
+      }
+    }
+
     const allClaims = db.get<ClaimRequest[]>('philhealth_claims') || [];
     allClaims.push(newClaim);
-    db.set('philhealth_claims', allClaims);
+    const ok = db.set('philhealth_claims', allClaims);
+    
+    if (!ok) {
+      setFileError('Failed to save claim request. Storage might be full.');
+      setIsSubmitting(false);
+      setStep('form');
+      return;
+    }
     
     setRefNum(newReqId);
     setIsSubmitting(false);
@@ -154,6 +172,30 @@ export function PhilHealthClaimsScreen() {
                       <Clock size={12} />
                       <span>{new Date(claim.submittedAt).toLocaleDateString()}</span>
                     </div>
+                    {claim.fileName && (
+                      <Button variant="ghost" size="sm" className="mt-2 text-left w-fit -ml-2" onClick={async () => {
+                        try {
+                          const f = await getFile(claim.id);
+                          if (f) {
+                            const url = URL.createObjectURL(f);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = claim.fileName || 'Claim_Document';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                          } else {
+                            alert("Claim document not found.");
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          alert("Error retrieving claim document.");
+                        }
+                      }}>
+                        <Download size={16} className="mr-1" /> {claim.fileName}
+                      </Button>
+                    )}
                   </Card>
                 ))}
               </motion.div>
@@ -165,7 +207,7 @@ export function PhilHealthClaimsScreen() {
                 <Card className="flex flex-col gap-4">
                   <Input label="Patient Name" placeholder="Full name of patient" value={formData.patientName} onChange={e => setFormData({ ...formData, patientName: e.target.value })} />
                   <Input label="Hospital / Facility Name" placeholder="Name of admitted facility" value={formData.hospitalName} onChange={e => setFormData({ ...formData, hospitalName: e.target.value })} />
-                  <Input label="Date Admitted" type="date" value={formData.dateAdmitted} onChange={e => setFormData({ ...formData, dateAdmitted: e.target.value })} />
+                  <Input label="Date Admitted" type="date" max={new Date().toISOString().split('T')[0]} value={formData.dateAdmitted} onChange={e => setFormData({ ...formData, dateAdmitted: e.target.value })} />
                   
                   <div>
                     <p className="text-body-sm font-semibold mb-2">Supporting Documents</p>
@@ -187,7 +229,14 @@ export function PhilHealthClaimsScreen() {
                     {fileError && <p className="text-xs text-error mt-1">{fileError}</p>}
                   </div>
                 </Card>
-                <Button variant="primary" size="lg" disabled={!formData.patientName || !formData.hospitalName || !formData.dateAdmitted || !file} onClick={() => setStep('review')}>
+                <Button variant="primary" size="lg" disabled={!formData.patientName || !formData.hospitalName || !formData.dateAdmitted || !file} onClick={() => {
+                  if (new Date(formData.dateAdmitted) > new Date()) {
+                    setFileError('Date admitted cannot be in the future.');
+                    return;
+                  }
+                  setFileError('');
+                  setStep('review');
+                }}>
                   Review Claim
                 </Button>
               </motion.div>

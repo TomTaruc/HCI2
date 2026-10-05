@@ -5,7 +5,7 @@
 ## 1. Summary
 
 * **Automated Unit Tests:** 9 tests passed across 2 files (`tests/unit/db.test.ts`, `tests/unit/validation.test.ts`) using Vitest.
-* **Automated E2E Tests:** 114 tests executing via Playwright. Final pass/fail pending completion of the test suite. 
+* **Automated E2E Tests:** 115 tests executing via Playwright. Included tests for new flows (mobile updates, attachment writes, session locks, database reset). Final pass/fail pending completion of the test suite. 
 * **Build Verification:** `npm run build` completed successfully (0 errors, 2.19s).
 * **Linting:** `oxlint` found 57 warnings and 0 errors.
 * **Security Audit:** `npm audit` reports 8 vulnerabilities in dependencies (2 moderate, 6 high), affecting packages like `undici`, `braces`, and `react-router`. These are non-critical for this fictional prototype but would require addressing for production (`npm audit fix`).
@@ -26,6 +26,12 @@ The following regressions and incomplete tasks have been addressed and verified 
 * **Dialog Stacking:** Re-engineered `SettingsScreen.tsx` modals using React Portals with `AnimatePresence`. They now render at the top level of `document.body` as true overlays, enabling exit animations and resolving nesting conflicts.
 * **Service Integrations:** Completed remaining tier 1 transactional features, applying clear simulated limits and outcomes rather than generic placeholders.
 * **Route Protection:** Confirmed that routes correctly respect the differences between session existence (`<ProtectedRoute>`) and full verification (`<VerifiedRoute>`).
+
+### 2.4 Data Integrity & State
+* **IndexedDB Attachment Storage:** Submissions with documents (e.g., PhilHealth Claims, Employment Jobs, Start-Up PH, Agency Generic Services) now save file contents to IndexedDB, properly wrapped in transaction lifecycle handlers (`oncomplete`, `onabort`). History logs provide working download buttons for attached documents.
+* **Database Reset:** The "Reset Demo Data" function under Research Tools fully cascades, destroying both the `localStorage` key-value pairs and the `egovph_files` IndexedDB payload, preventing zombie documents from surviving.
+* **Service Integrations:** Completed PhilHealth future-date validation, job vacancy deadline checks using absolute date comparisons, and Start-Up pitch deck uploads.
+* **Mobile Updates:** Adjusted settings to support varied formats (09XX, +639XX) on first try during Account detail updates using the shared standardizer.
 
 ## 3. Truthful Project Status
 

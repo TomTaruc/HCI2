@@ -18,7 +18,8 @@ import {
   changeMobile,
   requestOTP,
   verifyOTP,
-  requestEmailOTP
+  requestEmailOTP,
+  normalizePHMobile
 } from "../../mock/services/authService";
 import {
   Lock,
@@ -199,13 +200,10 @@ export function SettingsScreen() {
   };
 
   // --- Mobile Logic ---
-  const handleUpdateMobile = async () => {
-    if (!newMobile.match(/^9\d{9}$/)) {
-      setMobileError("Enter a valid 10-digit mobile number."); return;
-    }
+  const handleUpdateMobile = async (canonical: string) => {
     setMobileLoading(true); setMobileError("");
     try {
-      const res = await requestOTP(newMobile, 'update');
+      const res = await requestOTP(canonical, 'update');
       setChallengeId(res.challengeId);
       setMobileStep("otp");
     } catch (err: any) {
@@ -434,15 +432,13 @@ export function SettingsScreen() {
                       <p className="text-body-sm text-primary font-medium">We will send a one-time password (OTP) to this number to verify it.</p>
                     </div>
                     <Button variant="primary" fullWidth size="lg" isLoading={mobileLoading} onClick={() => {
-                      let cleaned = newMobile.replace(/\D/g, '');
-                      if (cleaned.startsWith('639')) cleaned = cleaned.substring(2);
-                      else if (cleaned.startsWith('09')) cleaned = cleaned.substring(1);
-                      if (!cleaned.match(/^9\d{9}$/)) {
+                      const canonical = normalizePHMobile(newMobile);
+                      if (!canonical) {
                         setMobileError('Enter a valid Philippine mobile number.');
                         return;
                       }
-                      setNewMobile(cleaned);
-                      handleUpdateMobile();
+                      setNewMobile(canonical);
+                      handleUpdateMobile(canonical);
                     }} disabled={!newMobile}>Send OTP</Button>
                   </>)}
                   {mobileStep === "otp" && (<>

@@ -125,6 +125,17 @@ export function ServiceDetailScreen() {
       submittedAt: new Date().toISOString()
     };
     
+    if (file) {
+      try {
+        await saveFile(newReqId, file);
+      } catch (err) {
+        setFileError('Failed to save document attachment. Please try again.');
+        setIsSubmitting(false);
+        setStep('form');
+        return;
+      }
+    }
+
     const allReqs = db.get<ServiceRequest[]>('service_requests') || [];
     allReqs.push(newReq);
     const ok = db.set('service_requests', allReqs);
@@ -134,14 +145,6 @@ export function ServiceDetailScreen() {
       setIsSubmitting(false);
       setStep('form');
       return;
-    }
-    
-    if (file) {
-      try {
-        await saveFile(newReqId, file);
-      } catch (err) {
-        console.warn('Failed to save file to IndexedDB', err);
-      }
     }
     
     setRefNum(newReqId);
@@ -283,6 +286,30 @@ export function ServiceDetailScreen() {
                   <Clock size={12} />
                   <span>{new Date(req.submittedAt).toLocaleDateString()}</span>
                 </div>
+                {req.fileName && (
+                  <Button variant="ghost" size="sm" className="mt-2 text-left" onClick={async () => {
+                    try {
+                      const f = await getFile(req.id);
+                      if (f) {
+                        const url = URL.createObjectURL(f);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = req.fileName || 'Attachment';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      } else {
+                        alert("Attachment file not found.");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert("Error retrieving attachment.");
+                    }
+                  }}>
+                    <Download size={16} className="mr-1" /> {req.fileName}
+                  </Button>
+                )}
               </Card>
             ))}
           </motion.div>

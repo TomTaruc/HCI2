@@ -18,7 +18,17 @@ function getDB(): Promise<IDBDatabase> {
       }
     };
     
-    request.onsuccess = () => resolve(request.result);
+    request.onblocked = () => {
+      console.warn('IndexedDB blocked');
+    };
+    
+    request.onsuccess = () => {
+      const db = request.result;
+      db.onversionchange = () => {
+        db.close();
+      };
+      resolve(db);
+    };
     request.onerror = () => reject(request.error);
   });
 }
@@ -28,10 +38,12 @@ export async function saveFile(id: string, file: File): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    const request = store.put(file, id);
     
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(new Error('Transaction aborted'));
+    
+    store.put(file, id);
   });
 }
 
@@ -44,5 +56,19 @@ export async function getFile(id: string): Promise<File | null> {
     
     request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => reject(request.error);
+  });
+}
+
+export async function clearFiles(): Promise<void> {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(new Error('Transaction aborted'));
+    
+    store.clear();
   });
 }

@@ -5,10 +5,11 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { CheckCircle, Smartphone, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Smartphone, AlertTriangle, Download } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { db, delay } from '../../mock/db';
 import { useAuth } from '../../state/AuthContext';
+import { normalizePHMobile, requestOTP, verifyOTP } from '../../mock/services/authService';
 
 interface SimRegistration {
   id: string;
@@ -43,56 +44,63 @@ export function SIMRegistrationScreen() {
     }
   }, [user]);
 
+  const [challengeId, setChallengeId] = useState('');
+
   const handleSendOTP = async () => {
     setIsLoading(true);
     setError('');
-    await delay(1000);
     
-    // Normalize mobile: remove non-digits, ensure length
-    const cleanMobile = mobile.replace(/\D/g, '');
-    if (cleanMobile.length !== 10) {
-      setError('Invalid mobile number format. Expected 10 digits.');
+    const canonical = normalizePHMobile(mobile);
+    if (!canonical) {
+      setError('Invalid Philippine mobile number format.');
       setIsLoading(false);
       return;
     }
     
     const allSims = db.get<SimRegistration[]>('sim_registrations') || [];
-    if (allSims.find(s => s.mobile === cleanMobile)) {
+    if (allSims.find(s => s.mobile === canonical)) {
       setError('This SIM is already registered.');
       setIsLoading(false);
       return;
     }
 
-    setMobile(cleanMobile);
-    setIsLoading(false);
-    setStep('otp');
+    try {
+      const res = await requestOTP(canonical, 'registration');
+      setChallengeId(res.challengeId);
+      setMobile(canonical);
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleVerifyOTP = async () => {
     setIsLoading(true);
     setError('');
-    await delay(1000);
     
-    if (otp !== '123456' && otp !== '000000') {
-      setError('Invalid OTP. Use 123456 or 000000 for demo.');
+    try {
+      await verifyOTP(challengeId, otp);
+      
+      const allSims = db.get<SimRegistration[]>('sim_registrations') || [];
+      const newSim: SimRegistration = {
+        id: `SIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        userId: user!.id,
+        mobile,
+        status: 'registered',
+        registeredAt: new Date().toISOString()
+      };
+      
+      db.set('sim_registrations', [...allSims, newSim]);
+      setRegisteredSims([...registeredSims, newSim]);
+      
+      setStep('registered');
+    } catch (err: any) {
+      setError(err.message || 'Invalid OTP.');
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    const allSims = db.get<SimRegistration[]>('sim_registrations') || [];
-    const newSim: SimRegistration = {
-      id: `SIM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      userId: user!.id,
-      mobile,
-      status: 'registered',
-      registeredAt: new Date().toISOString()
-    };
-    
-    db.set('sim_registrations', [...allSims, newSim]);
-    setRegisteredSims([...registeredSims, newSim]);
-    
-    setIsLoading(false);
-    setStep('registered');
   };
 
   if (step === 'loading') {
@@ -141,17 +149,16 @@ export function SIMRegistrationScreen() {
             <Card className="mt-2">
               <Input
                 label="Mobile Number"
-                placeholder="e.g. 912 345 6789"
+                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
                 type="tel"
                 value={mobile}
-                onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                prefix="+63"
+                onChange={e => setMobile(e.target.value)}
               />
               <Button 
                 variant="primary" 
                 fullWidth 
                 className="mt-4"
-                disabled={mobile.length !== 10}
+                disabled={!mobile}
                 isLoading={isLoading}
                 onClick={handleSendOTP}
               >
@@ -215,11 +222,23 @@ export function SIMRegistrationScreen() {
             <div className="w-full flex flex-col gap-3 mt-2">
               {registeredSims.map(sim => (
                 <Card key={sim.id} padding="md" className="flex items-center justify-between text-left">
-                  <div>
+                  <div className="flex-1">
                     <p className="text-body font-mono font-bold">+63 {sim.mobile}</p>
                     <p className="text-xs text-text-secondary">Registered: {new Date(sim.registeredAt).toLocaleDateString()}</p>
                   </div>
-                  <CheckCircle size={20} className="text-success" />
+                  <Button variant="ghost" size="sm" onClick={() => {
+                    const blob = new Blob([`DEMO ACKNOWLEDGMENT\n\nSIM Registration successful for mobile: +63 ${sim.mobile}\nReference ID: ${sim.id}\nDate: ${new Date(sim.registeredAt).toLocaleString()}\n\nNote: This is a simulated registration for academic demo purposes.`], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `SIM_Acknowledgment_${sim.mobile}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}>
+                    <Download size={20} className="text-primary" />
+                  </Button>
                 </Card>
               ))}
             </div>

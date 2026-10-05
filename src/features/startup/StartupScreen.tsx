@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { Rocket, CheckCircle, Clock, Plus } from 'lucide-react';
+import { Rocket, CheckCircle, Clock, Plus, Upload, X, FileText, Download, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { db, delay } from '../../mock/db';
+import { saveFile, getFile } from '../../mock/fileStore';
 import { useAuth } from '../../state/AuthContext';
 
 interface StartupRegistration {
@@ -18,6 +19,7 @@ interface StartupRegistration {
   description: string;
   status: 'pending' | 'approved' | 'rejected';
   submittedAt: string;
+  fileName?: string;
 }
 
 export function StartupScreen() {
@@ -28,6 +30,26 @@ export function StartupScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [registrations, setRegistrations] = useState<StartupRegistration[]>([]);
   const [refNum, setRefNum] = useState('');
+  
+  const [file, setFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFileError('');
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (f.size > 10 * 1024 * 1024) {
+      setFileError('File size must be under 10MB.');
+      return;
+    }
+    const allowed = ['application/pdf', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
+    if (!allowed.includes(f.type)) {
+      setFileError('Please upload a PDF or PowerPoint file.');
+      return;
+    }
+    setFile(f);
+  };
 
   useEffect(() => {
     if (user) {
@@ -42,6 +64,17 @@ export function StartupScreen() {
     await delay(1200);
     
     const newReqId = `SUP-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    if (file) {
+      try {
+        await saveFile(newReqId, file);
+      } catch (err) {
+        setFileError('Failed to save pitch deck attachment. Please try again.');
+        setIsSubmitting(false);
+        setStep('form');
+        return;
+      }
+    }
+
     const newReg: StartupRegistration = {
       id: newReqId,
       userId: user!.id,
@@ -49,12 +82,20 @@ export function StartupScreen() {
       sector: formData.sector,
       description: formData.description,
       status: 'pending',
-      submittedAt: new Date().toISOString()
+      submittedAt: new Date().toISOString(),
+      fileName: file?.name
     };
     
     const allStartups = db.get<StartupRegistration[]>('startup_registrations') || [];
     allStartups.push(newReg);
-    db.set('startup_registrations', allStartups);
+    const ok = db.set('startup_registrations', allStartups);
+    
+    if (!ok) {
+      setFileError('Failed to save registration. Storage might be full.');
+      setIsSubmitting(false);
+      setStep('form');
+      return;
+    }
     
     setRefNum(newReqId);
     setIsSubmitting(false);
@@ -122,6 +163,30 @@ export function StartupScreen() {
                   <Clock size={12} />
                   <span>Submitted: {new Date(reg.submittedAt).toLocaleDateString()}</span>
                 </div>
+                {reg.fileName && (
+                  <Button variant="ghost" size="sm" className="mt-2 text-left w-fit -ml-2" onClick={async () => {
+                    try {
+                      const f = await getFile(reg.id);
+                      if (f) {
+                        const url = URL.createObjectURL(f);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = reg.fileName || 'Pitch_Deck';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                      } else {
+                        alert("Pitch deck not found.");
+                      }
+                    } catch (err) {
+                      console.error(err);
+                      alert("Error retrieving pitch deck.");
+                    }
+                  }}>
+                    <Download size={16} className="mr-1" /> {reg.fileName}
+                  </Button>
+                )}
               </Card>
             ))}
           </motion.div>
@@ -152,6 +217,34 @@ export function StartupScreen() {
                   onChange={e => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
+              
+              <div>
+                <p className="text-body-sm text-text-secondary mb-1">Pitch Deck (Optional)</p>
+                <input type="file" ref={fileInputRef} className="hidden" accept=".pdf,.ppt,.pptx" onChange={handleFileChange} />
+                {!file ? (
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full border border-dashed border-border rounded-lg p-4 text-center hover:bg-bg transition-colors">
+                    <Upload size={24} className="text-text-secondary mx-auto mb-2" />
+                    <p className="text-body-sm text-text-secondary">Upload your pitch deck (PDF/PPTX)</p>
+                  </button>
+                ) : (
+                  <div className="border border-border rounded-lg p-3 flex items-center justify-between bg-bg">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center text-primary shrink-0">
+                        <FileText size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-body-sm font-semibold text-text-primary truncate">{file.name}</p>
+                        <p className="text-xs text-text-secondary">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setFile(null)} className="p-2 text-text-secondary hover:text-error" aria-label="Remove file">
+                      <X size={18} />
+                    </button>
+                  </div>
+                )}
+                {fileError && <p className="text-xs text-error mt-1">{fileError}</p>}
+              </div>
+
             </Card>
             <Button 
               variant="primary" 

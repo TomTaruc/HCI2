@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Briefcase, MapPin, CheckCircle, FileText, Upload, X, Clock, AlertTriangle } from 'lucide-react';
+import { Briefcase, MapPin, CheckCircle, FileText, Upload, X, Clock, AlertTriangle, Download } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
 import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { db, delay } from '../../mock/db';
+import { saveFile, getFile } from '../../mock/fileStore';
 import { useAuth } from '../../state/AuthContext';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -80,6 +81,14 @@ export function EmploymentScreen() {
       await delay(1200);
       const ref = 'JOB-' + Date.now().toString(36).toUpperCase();
       
+      if (file) {
+        try {
+          await saveFile(ref, file);
+        } catch (err) {
+          throw new Error('Failed to save PDS attachment. Please try again.');
+        }
+      }
+
       const allApps = db.get<JobApplication[]>('jobApplications') ?? [];
       const newApp = {
         id: ref,
@@ -94,7 +103,9 @@ export function EmploymentScreen() {
       };
       
       const success = db.set('jobApplications', [...allApps, newApp]);
-      if (!success) throw new Error('Storage failed');
+      if (!success) {
+        throw new Error('Failed to save application. Storage might be full.');
+      }
       
       setApplyingJob(null);
       setFormData({ coverLetter: '' });
@@ -239,7 +250,7 @@ export function EmploymentScreen() {
                       </div>
                       <div>
                         <p className="text-text-secondary font-medium text-xs uppercase tracking-wider">Deadline</p>
-                        <p className={`font-semibold ${job.status === 'expired' ? 'text-error' : 'text-text-primary'}`}>{new Date(job.deadline).toLocaleDateString()}</p>
+                        <p className={`font-semibold ${new Date(job.deadline) < new Date() ? 'text-error' : 'text-text-primary'}`}>{new Date(job.deadline).toLocaleDateString()}</p>
                       </div>
                     </div>
                     
@@ -251,7 +262,7 @@ export function EmploymentScreen() {
                     </div>
 
                     <div className="mt-4">
-                      {job.status === 'expired' ? (
+                      {new Date(job.deadline) < new Date() ? (
                         <Button variant="outline" fullWidth disabled>Vacancy Closed</Button>
                       ) : appliedIds.includes(job.id) ? (
                         <div className="bg-success-light text-success font-semibold px-4 py-2 rounded-lg flex items-center justify-center gap-2 text-sm">
@@ -289,10 +300,28 @@ export function EmploymentScreen() {
                     <span>{new Date(app.date).toLocaleDateString()}</span>
                   </div>
                   {app.pdsFileName && (
-                    <div className="mt-1 flex items-center gap-1 text-xs text-text-secondary">
-                      <FileText size={12} />
-                      <span>{app.pdsFileName}</span>
-                    </div>
+                    <Button variant="ghost" size="sm" className="mt-2 text-left w-fit -ml-2" onClick={async () => {
+                      try {
+                        const f = await getFile(app.id);
+                        if (f) {
+                          const url = URL.createObjectURL(f);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = app.pdsFileName || 'PDS_Attachment.pdf';
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        } else {
+                          alert("PDS attachment not found.");
+                        }
+                      } catch (err) {
+                        console.error(err);
+                        alert("Error retrieving PDS attachment.");
+                      }
+                    }}>
+                      <Download size={16} className="mr-1" /> {app.pdsFileName}
+                    </Button>
                   )}
                 </Card>
               ))
