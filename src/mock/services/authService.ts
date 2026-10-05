@@ -188,14 +188,14 @@ export async function requestOTP(rawMobile: string, purpose: 'registration' | 'r
 }
 
 /** Request an OTP for an email address. In demo mode, OTP is always 123456. */
-export async function requestEmailOTP(email: string, purpose: 'registration' | 'recovery' | 'update' = 'registration'): Promise<{ sent: boolean; challengeId: string }> {
+export async function requestEmailOTP(email: string, purpose: 'registration' | 'recovery' | 'update' = 'registration', userId?: string): Promise<{ sent: boolean; challengeId: string }> {
   await delay(800 + Math.random() * 400);
   const normalized = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) throw new ApiError('INVALID_EMAIL', 'Invalid email address.');
 
   if (purpose === 'registration' || purpose === 'update') {
     const allUsers = db.get<User[]>('users') || [];
-    if (allUsers.find(u => u.email === normalized)) {
+    if (allUsers.find(u => u.email === normalized && u.id !== userId)) {
       throw new ApiError('EMAIL_TAKEN', 'This email is already registered.');
     }
   }

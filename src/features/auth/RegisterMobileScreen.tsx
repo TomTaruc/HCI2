@@ -19,8 +19,15 @@ import { requestOTP } from '../../mock/services/authService';
 const schema = z.object({
   mobileNumber: z
     .string()
-    .regex(/^9\d{9}$/, 'Enter a valid 10-digit Philippine mobile number starting with 9 (e.g., 9171234567)')
-    .length(10, 'Mobile number must be exactly 10 digits'),
+    .transform((val) => {
+      let cleaned = val.replace(/\D/g, '');
+      if (cleaned.startsWith('639')) cleaned = cleaned.substring(2);
+      else if (cleaned.startsWith('09')) cleaned = cleaned.substring(1);
+      return cleaned;
+    })
+    .refine((val) => /^9\d{9}$/.test(val), {
+      message: 'Enter a valid Philippine mobile number (e.g., 09171234567 or +639171234567)',
+    }),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -81,9 +88,7 @@ export function RegisterMobileScreen() {
             <Input
               label="Mobile Number"
               type="tel"
-              placeholder="9XXXXXXXXX"
-              maxLength={10}
-              leftIcon={<span className="text-text-secondary text-body-sm font-semibold">+63</span>}
+              placeholder="09XXXXXXXXX or +639XXXXXXXXX"
               error={errors.mobileNumber?.message}
               autoFocus
               {...register('mobileNumber')}

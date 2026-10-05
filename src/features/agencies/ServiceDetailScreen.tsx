@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FileText, CheckCircle, ArrowRight, ExternalLink, Upload, X, Clock, Download, Plus } from 'lucide-react';
 import { AppBar } from '../../components/layout/AppBar';
@@ -7,9 +7,11 @@ import { ScreenContainer } from '../../components/layout/ScreenContainer';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { getServiceById } from '../../registry/services';
+import { getServiceByRoute } from '../../registry/services';
 import { useAuth } from '../../state/AuthContext';
 import { db, delay } from '../../mock/db';
+import { saveFile, getFile } from '../../mock/fileStore';
+import { ASSETS } from '../../assets/manifest';
 
 interface ServiceRequest {
   id: string;
@@ -26,6 +28,7 @@ interface ServiceRequest {
 export function ServiceDetailScreen() {
   const { agencyId, serviceId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   
   const [step, setStep] = useState<'info' | 'history' | 'form' | 'review' | 'success'>('info');
@@ -38,9 +41,7 @@ export function ServiceDetailScreen() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const lookupId = agencyId && serviceId ? `${agencyId}-${serviceId}` : serviceId || '';
-  const service = getServiceById(lookupId);
-  console.log('[DEBUG_LOOKUP]', { agencyId, serviceId, lookupId, service });
+  const service = getServiceByRoute(location.pathname);
 
   useEffect(() => {
     if (user && service) {
@@ -126,7 +127,22 @@ export function ServiceDetailScreen() {
     
     const allReqs = db.get<ServiceRequest[]>('service_requests') || [];
     allReqs.push(newReq);
-    db.set('service_requests', allReqs);
+    const ok = db.set('service_requests', allReqs);
+    
+    if (!ok) {
+      setFileError('Failed to save request. Storage might be full.');
+      setIsSubmitting(false);
+      setStep('form');
+      return;
+    }
+    
+    if (file) {
+      try {
+        await saveFile(newReqId, file);
+      } catch (err) {
+        console.warn('Failed to save file to IndexedDB', err);
+      }
+    }
     
     setRefNum(newReqId);
     setIsSubmitting(false);

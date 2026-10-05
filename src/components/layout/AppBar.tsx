@@ -38,6 +38,8 @@ export function AppBar({
     else navigate(-1);
   };
 
+  const hasBack = showBack || !!onBack;
+
   return (
     <header
       className={[
@@ -46,7 +48,7 @@ export function AppBar({
         transparent ? 'bg-transparent' : 'bg-white border-b border-border',
       ].join(' ')}
     >
-      {(showBack || !!onBack) && (
+      {hasBack && (
         <div className="flex items-center">
           <button
             onClick={handleBack}
@@ -73,7 +75,7 @@ export function AppBar({
         </div>
       )}
 
-      {!showBack && !transparent && (
+      {!hasBack && !transparent && (
         /* eGovPH Logo mark */
         <div className="flex items-center gap-1">
           <EGovLogo />
@@ -84,7 +86,7 @@ export function AppBar({
         {title && (
           <h1 className={[
             'font-semibold leading-tight truncate',
-            showBack ? 'text-h2' : 'text-body',
+            hasBack ? 'text-h2' : 'text-body',
             light ? 'text-white' : 'text-text-primary',
           ].join(' ')}>
             {title}
@@ -99,7 +101,7 @@ export function AppBar({
 
       <div className="flex items-center gap-1">
         {rightContent}
-        {!showBack && (
+        {!hasBack && (
           <button
             onClick={() => navigate('/notifications')}
             className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-primary-light transition-colors"

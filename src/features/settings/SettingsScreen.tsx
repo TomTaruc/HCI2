@@ -173,7 +173,7 @@ export function SettingsScreen() {
     }
     setEmailLoading(true); setEmailError("");
     try {
-      const res = await requestEmailOTP(newEmail, 'update');
+      const res = await requestEmailOTP(newEmail, 'update', user?.id);
       setEmailChallengeId(res.challengeId);
       setEmailStep("otp");
     } catch (err: any) {
@@ -424,18 +424,26 @@ export function SettingsScreen() {
                     <Input
                       label="New Mobile Number"
                       type="tel"
-                      placeholder="9XXXXXXXXX"
+                      placeholder="09XXXXXXXXX or +639XXXXXXXXX"
                       value={newMobile}
                       onChange={(e) => { setNewMobile(e.target.value); setMobileError(""); }}
                       error={mobileError}
-                      leftIcon={<span className="text-text-secondary text-body-sm font-semibold">+63</span>}
-                      maxLength={10}
                       autoFocus
                     />
                     <div className="bg-primary-light rounded-lg px-4 py-3">
                       <p className="text-body-sm text-primary font-medium">We will send a one-time password (OTP) to this number to verify it.</p>
                     </div>
-                    <Button variant="primary" fullWidth size="lg" isLoading={mobileLoading} onClick={handleUpdateMobile} disabled={!newMobile}>Send OTP</Button>
+                    <Button variant="primary" fullWidth size="lg" isLoading={mobileLoading} onClick={() => {
+                      let cleaned = newMobile.replace(/\D/g, '');
+                      if (cleaned.startsWith('639')) cleaned = cleaned.substring(2);
+                      else if (cleaned.startsWith('09')) cleaned = cleaned.substring(1);
+                      if (!cleaned.match(/^9\d{9}$/)) {
+                        setMobileError('Enter a valid Philippine mobile number.');
+                        return;
+                      }
+                      setNewMobile(cleaned);
+                      handleUpdateMobile();
+                    }} disabled={!newMobile}>Send OTP</Button>
                   </>)}
                   {mobileStep === "otp" && (<>
                     <p className="text-body text-text-secondary">Enter the 6-digit OTP sent to +63 {newMobile}. (Demo: 123456)</p>

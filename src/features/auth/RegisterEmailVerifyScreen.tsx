@@ -30,12 +30,12 @@ export function RegisterEmailVerifyScreen() {
   useEffect(() => {
     let active = true;
     if (email) {
-      requestEmailOTP(email, 'registration')
+      requestEmailOTP(email, 'registration', user?.id)
         .then(res => { if (active) setChallengeId(res.challengeId); })
         .catch(err => { if (active) setError(err.message || 'Failed to send OTP'); });
     }
     return () => { active = false; };
-  }, [email]);
+  }, [email, user]);
 
   const handleVerify = async (value?: string) => {
     if (isLoading) return; // Prevent duplicate submissions
@@ -64,7 +64,7 @@ export function RegisterEmailVerifyScreen() {
     setResendSent(true);
     setError('');
     try {
-      const res = await requestEmailOTP(email, 'registration');
+      const res = await requestEmailOTP(email, 'registration', user?.id);
       setChallengeId(res.challengeId);
       setTimeout(() => setResendSent(false), 3000);
     } catch (err: any) {

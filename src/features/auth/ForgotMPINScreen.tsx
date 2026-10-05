@@ -43,11 +43,15 @@ export function ForgotMPINScreen() {
   }, [prefillMobile, stage]);
 
   const handleSendOTP = async () => {
-    if (!mobileNumber.match(/^9\d{9}$/) && !mobileNumber.startsWith('+639')) { 
-      setError('Enter a valid mobile number.'); 
+    let cleaned = mobileNumber.replace(/\D/g, '');
+    if (cleaned.startsWith('639')) cleaned = cleaned.substring(2);
+    else if (cleaned.startsWith('09')) cleaned = cleaned.substring(1);
+    
+    if (!cleaned.match(/^9\d{9}$/)) { 
+      setError('Enter a valid Philippine mobile number.'); 
       return; 
     }
-    const canonical = normalizePHMobile(mobileNumber);
+    const canonical = normalizePHMobile(cleaned);
     if (!canonical) { setError('Invalid mobile number.'); return; }
     
     // L-02: Check if mobile number actually exists
@@ -125,7 +129,7 @@ export function ForgotMPINScreen() {
               </div>
               <h1 className="text-h1 font-bold text-text-primary">Reset your MPIN</h1>
               <p className="text-body text-text-secondary">Enter your registered mobile number to begin.</p>
-              <Input label="Mobile Number" type="tel" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} error={error} placeholder="9XXXXXXXXX" maxLength={10} leftIcon={<span className="text-text-secondary text-body-sm font-semibold">+63</span>} />
+              <Input label="Mobile Number" type="tel" value={mobileNumber} onChange={e => setMobileNumber(e.target.value)} error={error} placeholder="09XXXXXXXXX or +639XXXXXXXXX" />
               <Button variant="primary" fullWidth size="lg" isLoading={isLoading} onClick={handleSendOTP}>Send OTP</Button>
             </>
           )}

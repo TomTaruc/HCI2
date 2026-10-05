@@ -608,6 +608,10 @@ export function getServiceById(id: string): ServiceDefinition | undefined {
   return SERVICE_REGISTRY.find(s => s.id === id);
 }
 
+export function getServiceByRoute(route: string): ServiceDefinition | undefined {
+  return SERVICE_REGISTRY.find(s => s.route === route);
+}
+
 export function getServicesByAgency(agencyId: string): ServiceDefinition[] {
   return SERVICE_REGISTRY.filter(s => s.agencyId === agencyId);
 }

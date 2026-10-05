@@ -188,10 +188,10 @@ export function App() {
 
         {/* NGAs / Agencies — Flow C */}
         <Route path="/agencies" element={<ProtectedRoute><NGAsDirectoryScreen /></ProtectedRoute>} />
-        <Route path="/agencies/philhealth/services/membership" element={<ProtectedRoute><PhilHealthMembershipScreen /></ProtectedRoute>} />
-        <Route path="/agencies/philhealth/services/contribution" element={<ProtectedRoute><PhilHealthContributionScreen /></ProtectedRoute>} />
-        <Route path="/agencies/philhealth/services/claims" element={<ProtectedRoute><PhilHealthClaimsScreen /></ProtectedRoute>} />
-        <Route path="/agencies/philhealth/services/facilities" element={<ProtectedRoute><PhilHealthFacilitiesScreen /></ProtectedRoute>} />
+        <Route path="/agencies/philhealth/services/membership" element={<VerifiedRoute><PhilHealthMembershipScreen /></VerifiedRoute>} />
+        <Route path="/agencies/philhealth/services/contribution" element={<VerifiedRoute><PhilHealthContributionScreen /></VerifiedRoute>} />
+        <Route path="/agencies/philhealth/services/claims" element={<VerifiedRoute><PhilHealthClaimsScreen /></VerifiedRoute>} />
+        <Route path="/agencies/philhealth/services/facilities" element={<PhilHealthFacilitiesScreen />} />
         <Route path="/agencies/:agencyId" element={<ProtectedRoute><AgencyDetailScreen /></ProtectedRoute>} />
         <Route path="/agencies/:agencyId/services/:serviceId" element={<ProtectedRoute><ServiceDetailScreen /></ProtectedRoute>} />
         <Route path="/lgu" element={<ProtectedRoute><LGUScreen /></ProtectedRoute>} />

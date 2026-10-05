@@ -29,10 +29,15 @@ export function LoginMPINScreen() {
   const isDemoAccount = DEMO_MOBILES.includes(mobileNumber);
 
   const handleMobileSubmit = () => {
-    if (!mobileNumber.match(/^9\d{9}$/)) {
-      setMobileError('Enter a valid 10-digit Philippine mobile number starting with 9.');
+    let cleaned = mobileNumber.replace(/\D/g, '');
+    if (cleaned.startsWith('639')) cleaned = cleaned.substring(2);
+    else if (cleaned.startsWith('09')) cleaned = cleaned.substring(1);
+
+    if (!cleaned.match(/^9\d{9}$/)) {
+      setMobileError('Enter a valid Philippine mobile number.');
       return;
     }
+    setMobileNumber(cleaned);
     setMobileError('');
     setStep('mpin');
   };
@@ -113,12 +118,10 @@ export function LoginMPINScreen() {
               <Input
                 label="Mobile Number"
                 type="tel"
-                placeholder="9XXXXXXXXX"
+                placeholder="09XXXXXXXXX or +639XXXXXXXXX"
                 value={mobileNumber}
                 onChange={e => { setMobileNumber(e.target.value); setMobileError(''); }}
                 error={mobileError}
-                leftIcon={<span className="text-text-secondary text-body-sm font-semibold">+63</span>}
-                maxLength={10}
                 autoFocus
               />
               <Button variant="primary" fullWidth size="lg" onClick={handleMobileSubmit}>
